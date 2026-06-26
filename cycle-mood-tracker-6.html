@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cycle & Mood Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--moon:#f5efe6;--blush:#e8c4b8;--rose:#c97a6d;--plum:#7a4a5e;--deep:#3d2535;--sage:#8faa8b;--sky:#8baabe;--gold:#d4a756;--text:#3d2535;--card:rgba(255,255,255,0.85);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--moon);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:-30%;right:-20%;width:70vw;height:70vw;border-radius:50%;background:radial-gradient(circle,rgba(232,196,184,0.4) 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;bottom:-20%;left:-10%;width:50vw;height:50vw;border-radius:50%;background:radial-gradient(circle,rgba(122,74,94,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:20px 16px 100px;}
+header{text-align:center;padding:20px 0 16px;}
+header h1{font-family:'Fraunces',serif;font-size:28px;font-weight:300;color:var(--plum);line-height:1.2;}
+header h1 em{font-style:italic;color:var(--rose);}
+header p{font-size:13px;color:var(--rose);opacity:.8;margin-top:4px;font-weight:300;}
+
+/* STREAK */
+.streak-bar{background:var(--card);border-radius:16px;padding:14px 18px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);display:flex;align-items:center;gap:12px;}
+.streak-flame{font-size:28px;line-height:1;}
+.streak-text{flex:1;}
+.streak-count{font-family:'Fraunces',serif;font-size:20px;font-weight:300;color:var(--plum);}
+.streak-label{font-size:11px;color:var(--text);opacity:.55;margin-top:1px;}
+.streak-dots{display:flex;gap:5px;margin-top:6px;}
+.streak-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,122,109,0.2);}
+.streak-dot.filled{background:var(--rose);}
+
+/* CARDS */
+.card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);backdrop-filter:blur(8px);}
+.card h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:14px;}
+.card-sub{font-size:12px;color:var(--text);opacity:.55;margin-bottom:14px;line-height:1.5;}
+
+/* PHASE BANNER */
+.phase-banner{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.2);backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(61,37,53,0.06);}
+.phase-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--rose);font-weight:500;margin-bottom:4px;}
+.phase-name{font-family:'Fraunces',serif;font-size:22px;font-weight:300;color:var(--plum);}
+.phase-desc{font-size:13px;color:var(--text);opacity:.7;margin-top:6px;line-height:1.5;}
+.adhd-note{margin-top:10px;padding:10px 12px;background:rgba(122,74,94,0.08);border-radius:10px;border-left:3px solid var(--plum);font-size:12px;line-height:1.5;color:var(--plum);}
+.adhd-note strong{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;opacity:.7;}
+
+/* PERIOD START BTN */
+.period-start-btn{width:100%;padding:11px;background:rgba(232,133,122,0.12);color:#c0564a;border:1.5px solid rgba(232,133,122,0.4);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;margin-bottom:0;}
+.period-start-btn:hover{background:rgba(232,133,122,0.22);}
+
+/* FORM ELEMENTS */
+.input-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.input-group{flex:1;min-width:120px;}
+.input-group label,.field-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--rose);margin-bottom:5px;font-weight:500;}
+.input-group input{width:100%;padding:10px 12px;border:1px solid rgba(201,122,109,0.3);border-radius:10px;background:rgba(255,255,255,0.8);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s;}
+.input-group input:focus{border-color:var(--rose);}
+.btn-primary{width:100%;padding:12px;background:var(--plum);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s,transform .1s;}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:hover{background:var(--rose);}
+.btn-secondary{width:100%;padding:12px;background:transparent;color:var(--plum);border:1.5px solid var(--plum);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{background:rgba(122,74,94,0.08);}
+
+/* WHEEL */
+.wheel-section{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);text-align:center;}
+.wheel-section h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:14px;text-align:left;}
+#cycleWheel{display:block;margin:0 auto;}
+.day-counter{font-family:'Fraunces',serif;font-size:36px;font-weight:300;color:var(--plum);margin-top:10px;}
+.day-counter span{font-size:14px;color:var(--rose);font-family:'DM Sans',sans-serif;margin-left:4px;}
+.cycle-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text);opacity:.7;}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* LOG FORM */
+.mood-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.mood-btn{padding:10px 4px;border:2px solid transparent;border-radius:12px;background:rgba(245,239,230,0.8);cursor:pointer;text-align:center;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.mood-btn .emoji{font-size:20px;display:block;}
+.mood-btn .label{font-size:10px;color:var(--text);opacity:.7;margin-top:3px;display:block;}
+.mood-btn.selected{border-color:var(--rose);background:rgba(201,122,109,0.15);}
+.mood-btn:active{transform:scale(.95);}
+.energy-row{margin-bottom:14px;}
+.energy-row label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--rose);margin-bottom:8px;font-weight:500;}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:rgba(201,122,109,0.2);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--rose);cursor:pointer;box-shadow:0 2px 8px rgba(201,122,109,0.4);}
+.slider-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text);opacity:.5;margin-top:4px;}
+.tag-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{padding:6px 12px;border-radius:20px;border:1px solid rgba(201,122,109,0.3);background:rgba(245,239,230,0.8);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--text);}
+.tag.selected{background:var(--plum);color:white;border-color:var(--plum);}
+.notes-area{width:100%;padding:10px 12px;border:1px solid rgba(201,122,109,0.3);border-radius:10px;background:rgba(255,255,255,0.8);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);resize:none;outline:none;height:70px;margin-bottom:12px;transition:border-color .2s;}
+.notes-area:focus{border-color:var(--rose);}
+
+/* HISTORY */
+.history-entry{padding:12px;border-radius:12px;background:rgba(245,239,230,0.6);margin-bottom:8px;border-left:3px solid var(--blush);}
+.entry-header{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.entry-date{font-size:12px;font-weight:500;color:var(--plum);}
+.entry-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.entry-tag{font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(201,122,109,0.15);color:var(--plum);}
+.entry-note{font-size:12px;color:var(--text);opacity:.7;margin-top:4px;}
+.entry-actions{display:flex;gap:8px;margin-left:auto;}
+.edit-btn{font-size:11px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;opacity:.7;padding:0;color:var(--plum);}
+.delete-btn{font-size:11px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;opacity:.7;padding:0;color:var(--rose);}
+.empty-state{text-align:center;padding:20px;color:var(--text);opacity:.4;font-size:13px;}
+
+/* EDIT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(61,37,53,0.4);backdrop-filter:blur(4px);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--moon);border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-header h3{font-family:'Fraunces',serif;font-size:18px;font-weight:300;color:var(--plum);}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);opacity:.5;padding:0;line-height:1;}
+.modal .mood-grid{grid-template-columns:repeat(4,1fr);}
+
+/* FORECAST */
+.forecast-card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);}
+.forecast-card h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:6px;}
+.fc-sub{font-size:12px;color:var(--text);opacity:.55;margin-bottom:14px;line-height:1.4;}
+.window-toggle{display:flex;gap:6px;margin-bottom:16px;}
+.wt-btn{flex:1;padding:8px 4px;border:1.5px solid rgba(201,122,109,0.3);border-radius:10px;background:rgba(245,239,230,0.6);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:all .2s;text-align:center;}
+.wt-btn.active{background:var(--plum);color:white;border-color:var(--plum);}
+.forecast-day{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:14px;margin-bottom:8px;border-left:4px solid transparent;background:rgba(245,239,230,0.5);}
+.forecast-day.is-today{background:rgba(201,122,109,0.1);border-left-color:var(--rose);}
+.forecast-day.is-today .fd-dow{color:var(--rose);}
+.fd-date-col{min-width:42px;text-align:center;flex-shrink:0;}
+.fd-dow{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--plum);font-weight:500;}
+.fd-date{font-family:'Fraunces',serif;font-size:20px;font-weight:300;color:var(--plum);line-height:1;margin-top:2px;}
+.fd-today-badge{font-size:9px;background:var(--rose);color:white;border-radius:6px;padding:1px 5px;margin-top:2px;display:inline-block;}
+.fd-content{flex:1;}
+.fd-phase-pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;color:white;font-weight:500;margin-bottom:5px;}
+.fd-weather{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.fd-weather-icon{font-size:22px;}
+.fd-weather-label{font-size:13px;font-weight:500;color:var(--plum);}
+.fd-bars{display:flex;flex-direction:column;gap:3px;margin-bottom:5px;}
+.fd-bar-row{display:flex;align-items:center;gap:6px;}
+.fd-bar-label{font-size:10px;width:42px;color:var(--text);opacity:.6;flex-shrink:0;}
+.fd-bar-track{flex:1;height:5px;background:rgba(61,37,53,0.1);border-radius:3px;overflow:hidden;}
+.fd-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.fd-bar-val{font-size:10px;width:24px;text-align:right;color:var(--text);opacity:.5;}
+.fd-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
+.fd-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(122,74,94,0.1);color:var(--plum);}
+.fd-note{font-size:11px;color:var(--text);opacity:.6;line-height:1.4;font-style:italic;}
+.confidence-strip{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.conf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.conf-label{font-size:10px;color:var(--text);opacity:.5;}
+.data-source-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:8px;margin-left:6px;vertical-align:middle;}
+.badge-personal{background:rgba(122,74,94,0.15);color:var(--plum);}
+.badge-research{background:rgba(143,170,139,0.2);color:#4a7046;}
+.share-section{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);}
+.share-section h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:10px;}
+.share-preview{background:rgba(245,239,230,0.7);border-radius:12px;padding:14px;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;margin-bottom:12px;border:1px solid rgba(201,122,109,0.15);min-height:60px;}
+
+/* PATTERN SUMMARY */
+.pattern-section{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);}
+.pattern-section h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:6px;}
+.pattern-phase-block{margin-bottom:16px;padding:14px;background:rgba(245,239,230,0.5);border-radius:14px;}
+.ppb-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ppb-pill{font-size:11px;font-weight:500;color:white;padding:3px 10px;border-radius:10px;}
+.ppb-days{font-size:11px;color:var(--text);opacity:.5;}
+.ppb-bars{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.ppb-bar-row{display:flex;align-items:center;gap:8px;}
+.ppb-bar-label{font-size:11px;width:46px;color:var(--text);opacity:.6;flex-shrink:0;}
+.ppb-bar-track{flex:1;height:7px;background:rgba(61,37,53,0.1);border-radius:4px;overflow:hidden;}
+.ppb-bar-fill{height:100%;border-radius:4px;}
+.ppb-bar-val{font-size:11px;width:28px;text-align:right;color:var(--text);opacity:.6;}
+.ppb-moods{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;}
+.ppb-mood-tag{font-size:11px;padding:3px 9px;border-radius:10px;background:rgba(201,122,109,0.12);color:var(--plum);}
+.ppb-insight{font-size:12px;color:var(--text);opacity:.65;line-height:1.5;font-style:italic;}
+.pattern-no-data{text-align:center;padding:24px;color:var(--text);opacity:.45;font-size:13px;line-height:1.6;}
+.data-counter{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(122,74,94,0.07);border-radius:10px;margin-bottom:14px;}
+.dc-icon{font-size:18px;}
+.dc-text{font-size:12px;color:var(--plum);line-height:1.4;}
+
+/* INSIGHTS */
+.insight-card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);}
+.insight-card h2{font-family:'Fraunces',serif;font-size:16px;font-weight:300;color:var(--plum);margin-bottom:12px;}
+.phase-insights{display:flex;flex-direction:column;gap:8px;}
+.insight-row{display:flex;align-items:flex-start;gap:10px;padding:10px;background:rgba(245,239,230,0.6);border-radius:10px;}
+.insight-row .i-phase{font-size:11px;font-weight:500;color:white;padding:3px 8px;border-radius:10px;white-space:nowrap;min-width:80px;text-align:center;}
+.insight-row .i-text{font-size:12px;line-height:1.5;color:var(--text);opacity:.8;}
+
+/* TABS */
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(245,239,230,0.95);backdrop-filter:blur(12px);border-top:1px solid rgba(201,122,109,0.2);display:flex;padding:6px 0 10px;z-index:100;}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 1px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;min-width:0;}
+.tab-btn .tab-icon{font-size:16px;transition:transform .2s;}
+.tab-btn .tab-label{font-size:8px;color:var(--text);opacity:.4;font-weight:500;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+.tab-btn.active .tab-label{color:var(--rose);opacity:1;}
+.tab-btn.active .tab-icon{transform:scale(1.15);}
+.view{display:none;}
+.view.active{display:block;}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--plum);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-family:'DM Sans',sans-serif;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.mb12{margin-bottom:12px;}
+
+/* DEEP DIVE */
+.dd-section{background:var(--card);border-radius:20px;padding:20px;margin-bottom:14px;border:1px solid rgba(201,122,109,0.15);}
+.dd-section h2{font-family:'Fraunces',serif;font-size:15px;font-weight:300;color:var(--plum);margin-bottom:6px;}
+.dd-no-data{text-align:center;padding:18px;color:var(--text);opacity:.4;font-size:12px;line-height:1.6;}
+.dd-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(201,122,109,0.1);}
+.dd-row:last-child{border-bottom:none;}
+.dd-row-label{min-width:74px;font-size:12px;font-weight:500;color:var(--plum);flex-shrink:0;}
+.dd-row-n{font-size:10px;color:var(--text);opacity:.4;flex-shrink:0;min-width:38px;}
+.dd-bars-mini{flex:1;display:flex;flex-direction:column;gap:3px;}
+.dd-bar-mini-row{display:flex;align-items:center;gap:6px;}
+.dd-bar-mini-label{font-size:9px;width:32px;color:var(--text);opacity:.5;flex-shrink:0;}
+.dd-bar-mini-track{flex:1;height:5px;background:rgba(61,37,53,0.08);border-radius:3px;overflow:hidden;}
+.dd-bar-mini-fill{height:100%;border-radius:3px;}
+.dd-bar-mini-val{font-size:9px;width:22px;text-align:right;color:var(--text);opacity:.5;}
+
+.dd-cross-grid{display:flex;flex-direction:column;gap:6px;}
+.dd-cross-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(245,239,230,0.5);border-radius:10px;}
+.dd-cross-phase{font-size:10px;padding:2px 8px;border-radius:8px;color:white;font-weight:500;flex-shrink:0;}
+.dd-cross-ctx{font-size:11px;color:var(--text);opacity:.7;flex:1;}
+.dd-cross-mood{font-size:13px;font-weight:500;flex-shrink:0;}
+
+.dd-cooccur-pair{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid rgba(201,122,109,0.1);}
+.dd-cooccur-pair:last-child{border-bottom:none;}
+.dd-cooccur-tags{flex:1;font-size:12px;color:var(--text);}
+.dd-cooccur-tags strong{color:var(--plum);}
+.dd-cooccur-pct{font-size:11px;color:var(--rose);font-weight:500;flex-shrink:0;}
+
+.dd-volatility-card{padding:12px;background:rgba(245,239,230,0.5);border-radius:12px;margin-bottom:8px;}
+.dd-vol-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.dd-vol-phase{font-size:11px;font-weight:500;color:white;padding:2px 9px;border-radius:8px;}
+.dd-vol-score{font-size:13px;font-weight:500;color:var(--plum);}
+.dd-vol-bar-track{height:8px;background:rgba(61,37,53,0.08);border-radius:4px;overflow:hidden;margin-bottom:4px;}
+.dd-vol-bar-fill{height:100%;border-radius:4px;}
+.dd-vol-desc{font-size:11px;color:var(--text);opacity:.6;line-height:1.4;}
+
+.dd-accuracy-stat{text-align:center;padding:16px 10px;}
+.dd-accuracy-pct{font-family:'Fraunces',serif;font-size:42px;font-weight:300;color:var(--plum);}
+.dd-accuracy-label{font-size:12px;color:var(--text);opacity:.6;margin-top:2px;}
+.dd-accuracy-breakdown{display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap;}
+.dd-accuracy-item{text-align:center;}
+.dd-accuracy-item .n{font-size:18px;font-weight:500;color:var(--plum);font-family:'Fraunces',serif;}
+.dd-accuracy-item .l{font-size:10px;color:var(--text);opacity:.5;text-transform:uppercase;letter-spacing:.5px;}
+
+.dd-bw-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dd-bw-card{padding:14px;border-radius:14px;}
+.dd-bw-card.best{background:rgba(143,170,139,0.12);border:1px solid rgba(143,170,139,0.3);}
+.dd-bw-card.worst{background:rgba(232,133,122,0.1);border:1px solid rgba(232,133,122,0.3);}
+.dd-bw-icon{font-size:22px;margin-bottom:4px;}
+.dd-bw-date{font-size:12px;font-weight:500;color:var(--plum);margin-bottom:6px;}
+.dd-bw-detail{font-size:11px;color:var(--text);opacity:.7;line-height:1.6;}
+.dd-bw-detail strong{color:var(--plum);}
+.dd-bw-note{font-size:11px;font-style:italic;color:var(--text);opacity:.6;margin-top:6px;line-height:1.4;}
+
+.dd-word-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:14px;font-size:12px;margin:3px;}
+.dd-word-chip.low{background:rgba(232,133,122,0.12);color:#c0564a;}
+.dd-word-chip.high{background:rgba(143,170,139,0.15);color:#4a7046;}
+.dd-word-count{font-size:10px;opacity:.6;}
+.dd-word-group-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text);opacity:.5;font-weight:500;margin:10px 0 6px;}
+
+.dd-countdown-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(201,122,109,0.1);}
+.dd-countdown-row:last-child{border-bottom:none;}
+.dd-countdown-label{min-width:64px;font-size:11px;color:var(--plum);font-weight:500;flex-shrink:0;}
+/* CONTEXT SELECTOR */
+.ctx-selector{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.ctx-btn{flex:1;min-width:60px;padding:9px 6px;border:1.5px solid rgba(201,122,109,0.3);border-radius:12px;background:rgba(245,239,230,0.8);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:all .2s;text-align:center;line-height:1.3;}
+.ctx-btn .ctx-icon{display:block;font-size:18px;margin-bottom:2px;}
+.ctx-btn.selected{border-color:var(--plum);background:rgba(122,74,94,0.12);color:var(--plum);}
+/* TRAJECTORY */
+.traj-row{display:flex;gap:8px;margin-bottom:14px;}
+.traj-btn{flex:1;padding:10px 4px;border:1.5px solid rgba(201,122,109,0.3);border-radius:12px;background:rgba(245,239,230,0.8);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:all .2s;text-align:center;}
+.traj-btn .traj-icon{display:block;font-size:18px;margin-bottom:2px;}
+.traj-btn.selected{border-color:var(--plum);background:rgba(122,74,94,0.12);color:var(--plum);}
+.traj-btn.up.selected{border-color:#8faa8b;background:rgba(143,170,139,0.15);color:#4a7046;}
+.traj-btn.down.selected{border-color:#e8857a;background:rgba(232,133,122,0.12);color:#c0564a;}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Cycle &amp; <em>Mood</em></h1>
+    <p>Track how you feel through your cycle</p>
+  </header>
+
+  <!-- TODAY -->
+  <div class="view active" id="view-today">
+    <div class="streak-bar" id="streakBar">
+      <div class="streak-flame" id="streakFlame">🔥</div>
+      <div class="streak-text">
+        <div class="streak-count" id="streakCount">0 day streak</div>
+        <div class="streak-label" id="streakLabel">Log today to get started</div>
+        <div class="streak-dots" id="streakDots"></div>
+      </div>
+    </div>
+
+    <div class="phase-banner">
+      <div class="phase-label">Current phase</div>
+      <div class="phase-name" id="phaseName">Set up your cycle below</div>
+      <div class="phase-desc" id="phaseDesc">Add your last period start date to get started.</div>
+      <div class="adhd-note" id="adhdNote" style="display:none">
+        <strong>ADHD &amp; this phase</strong>
+        <span id="adhdText"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your cycle</h2>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Last period started</label>
+          <input type="date" id="lastPeriod">
+        </div>
+        <div class="input-group">
+          <label>Cycle length (days)</label>
+          <input type="number" id="cycleLength" value="28" min="21" max="40">
+        </div>
+      </div>
+      <button class="btn-primary mb12" onclick="saveCycle()">Update</button>
+      <button class="period-start-btn" onclick="markPeriodToday()">🩸 My period started today</button>
+    </div>
+
+    <div class="wheel-section">
+      <h2>Cycle wheel</h2>
+      <canvas id="cycleWheel" width="260" height="260"></canvas>
+      <div class="day-counter" id="dayCounter">—<span>day of cycle</span></div>
+      <div class="cycle-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#e8857a"></div>Menstrual</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8faa8b"></div>Follicular</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d4a756"></div>Ovulation</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8baabe"></div>Luteal</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your data</h2>
+      <p class="card-sub">Back up your entries, or move them to a new device or browser. Export creates a file you can re-import later — nothing leaves your device.</p>
+      <button class="btn-secondary mb12" onclick="exportData()">⬇️ Export data (.json)</button>
+      <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()">⬆️ Import data (.json)</button>
+      <input type="file" id="importFileInput" accept=".json,application/json" style="display:none" onchange="importData(event)">
+      <div id="dataCount" style="font-size:11px;color:var(--text);opacity:.5;margin-top:10px;text-align:center"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="view" id="view-log">
+    <div class="card">
+      <h2>Log today</h2>
+      <div class="input-group mb12">
+        <label>Date</label>
+        <input type="date" id="logDate">
+      </div>
+      <label class="field-label" style="margin-bottom:8px">Mood</label>
+      <div class="mood-grid" id="moodGrid">
+        <button class="mood-btn" data-mood="Happy" onclick="selectMood(this,'log')"><span class="emoji">😊</span><span class="label">Happy</span></button>
+        <button class="mood-btn" data-mood="Content" onclick="selectMood(this,'log')"><span class="emoji">🌿</span><span class="label">Content</span></button>
+        <button class="mood-btn" data-mood="Calm" onclick="selectMood(this,'log')"><span class="emoji">😌</span><span class="label">Calm</span></button>
+        <button class="mood-btn" data-mood="Confident" onclick="selectMood(this,'log')"><span class="emoji">✨</span><span class="label">Confident</span></button>
+        <button class="mood-btn" data-mood="Focused" onclick="selectMood(this,'log')"><span class="emoji">🎯</span><span class="label">Focused</span></button>
+        <button class="mood-btn" data-mood="Productive" onclick="selectMood(this,'log')"><span class="emoji">⚡</span><span class="label">Productive</span></button>
+        <button class="mood-btn" data-mood="Hyper" onclick="selectMood(this,'log')"><span class="emoji">🚀</span><span class="label">Hyper</span></button>
+        <button class="mood-btn" data-mood="Restless" onclick="selectMood(this,'log')"><span class="emoji">🌀</span><span class="label">Restless</span></button>
+        <button class="mood-btn" data-mood="Anxious" onclick="selectMood(this,'log')"><span class="emoji">😰</span><span class="label">Anxious</span></button>
+        <button class="mood-btn" data-mood="Irritable" onclick="selectMood(this,'log')"><span class="emoji">😤</span><span class="label">Irritable</span></button>
+        <button class="mood-btn" data-mood="Sensitive" onclick="selectMood(this,'log')"><span class="emoji">🫀</span><span class="label">Sensitive</span></button>
+        <button class="mood-btn" data-mood="Emotional" onclick="selectMood(this,'log')"><span class="emoji">🥺</span><span class="label">Emotional</span></button>
+        <button class="mood-btn" data-mood="Overwhelmed" onclick="selectMood(this,'log')"><span class="emoji">😵</span><span class="label">Overwhelmed</span></button>
+        <button class="mood-btn" data-mood="Low" onclick="selectMood(this,'log')"><span class="emoji">😔</span><span class="label">Low</span></button>
+        <button class="mood-btn" data-mood="Subdued" onclick="selectMood(this,'log')"><span class="emoji">🌫️</span><span class="label">Subdued</span></button>
+        <button class="mood-btn" data-mood="Tired" onclick="selectMood(this,'log')"><span class="emoji">😴</span><span class="label">Tired</span></button>
+        <button class="mood-btn" data-mood="Brain fog" onclick="selectMood(this,'log')"><span class="emoji">☁️</span><span class="label">Brain fog</span></button>
+      </div>
+      <div class="energy-row">
+        <label>Energy — <span id="energyVal">5</span>/10</label>
+        <input type="range" id="energySlider" min="1" max="10" value="5" oninput="document.getElementById('energyVal').textContent=this.value">
+        <div class="slider-labels"><span>Drained</span><span>Moderate</span><span>High</span></div>
+      </div>
+      <div class="energy-row">
+        <label>Focus — <span id="focusVal">5</span>/10</label>
+        <input type="range" id="focusSlider" min="1" max="10" value="5" oninput="document.getElementById('focusVal').textContent=this.value">
+        <div class="slider-labels"><span>Scattered</span><span>Okay</span><span>Sharp</span></div>
+      </div>
+      <div class="energy-row">
+        <label>Stress — <span id="stressVal">5</span>/10</label>
+        <input type="range" id="stressSlider" min="1" max="10" value="5" oninput="document.getElementById('stressVal').textContent=this.value">
+        <div class="slider-labels"><span>Calm</span><span>Moderate</span><span>High</span></div>
+      </div>
+      <label class="field-label" style="margin-bottom:8px">Day context</label>
+      <div class="ctx-selector" id="ctxSelector">
+        <button class="ctx-btn" data-ctx="Work" onclick="selectCtx(this,'log')"><span class="ctx-icon">💼</span>Work</button>
+        <button class="ctx-btn" data-ctx="Home" onclick="selectCtx(this,'log')"><span class="ctx-icon">🏠</span>Home</button>
+        <button class="ctx-btn" data-ctx="Leave" onclick="selectCtx(this,'log')"><span class="ctx-icon">🌴</span>Leave</button>
+        <button class="ctx-btn" data-ctx="Weekend" onclick="selectCtx(this,'log')"><span class="ctx-icon">☀️</span>Weekend</button>
+      </div>
+      <label class="field-label" style="margin-bottom:8px">How does today compare to yesterday?</label>
+      <div class="traj-row" id="trajSelector">
+        <button class="traj-btn up" data-traj="Better" onclick="selectTraj(this,'log')"><span class="traj-icon">📈</span>Better</button>
+        <button class="traj-btn" data-traj="Same" onclick="selectTraj(this,'log')"><span class="traj-icon">➡️</span>Same</button>
+        <button class="traj-btn down" data-traj="Worse" onclick="selectTraj(this,'log')"><span class="traj-icon">📉</span>Worse</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="field-label" style="margin-bottom:8px">Symptoms / feelings</label>
+        <div class="tag-grid" id="tagGrid">
+          <span class="tag" onclick="toggleTag(this,'log')">Cramps</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Bloating</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Headache</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Tender breasts</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Back pain</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Hyperfocus</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Rejection sensitive</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Time blindness</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Impulsive</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Poor sleep</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Heightened senses</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Low motivation</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Sensory overload</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Cravings</span>
+          <span class="tag" onclick="toggleTag(this,'log')">Tearful</span>
+        </div>
+      </div>
+      <textarea class="notes-area" id="noteText" placeholder="Anything driving today's mood?"></textarea>
+      <button class="btn-primary" onclick="saveLog()">Save entry</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="view" id="view-history">
+    <div class="card">
+      <h2>Your log</h2>
+      <div id="historyList"><div class="empty-state">No entries yet.<br>Start logging to see patterns.</div></div>
+    </div>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="view" id="view-forecast">
+    <div class="forecast-card">
+      <h2>Mood forecast</h2>
+      <p class="fc-sub">Based on your cycle phase. Your logged data is layered in automatically once you have a few weeks of entries.</p>
+      <div class="window-toggle">
+        <button class="wt-btn active" id="wt-3" onclick="setWindow(3)">3 days</button>
+        <button class="wt-btn" id="wt-7" onclick="setWindow(7)">7 days</button>
+        <button class="wt-btn" id="wt-14" onclick="setWindow(14)">14 days</button>
+      </div>
+      <div id="forecastList"></div>
+    </div>
+    <div class="share-section">
+      <h2>Share with partner</h2>
+      <div class="share-preview" id="sharePreview">Set up your cycle to generate a summary.</div>
+      <button class="btn-secondary" onclick="copyShare()">Copy to clipboard</button>
+    </div>
+  </div>
+
+  <!-- PATTERNS -->
+  <div class="view" id="view-patterns">
+    <div class="pattern-section">
+      <h2>Your patterns</h2>
+      <p class="card-sub">How you've actually felt during each phase, based on your logged entries.</p>
+      <div id="patternContent"></div>
+    </div>
+  </div>
+
+  <!-- DEEP DIVE -->
+  <div class="view" id="view-deepdive">
+    <div class="dd-section">
+      <h2>🏢 Work vs Home vs Leave vs Weekend</h2>
+      <p class="card-sub">Average scores when each context applies. Days with multiple contexts (e.g. WFH) count toward both.</p>
+      <div id="ddContext"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>📅 Day of the week</h2>
+      <p class="card-sub">Does a particular day tend to hit harder, regardless of cycle phase?</p>
+      <div id="ddDayOfWeek"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>🧩 Phase × Context</h2>
+      <p class="card-sub">Each row is a phase + situation you've actually experienced together (e.g. "Follicular, working from home"), with how many days and your average mood out of 10 on those days. 🟢 = good, 🟡 = middling, 🔴 = low. Sorted hardest to easiest, so the top row is your toughest known combination — and the bottom row shows where you tend to cope best.</p>
+      <div id="ddCrossCut"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>🔗 Symptoms that cluster together</h2>
+      <p class="card-sub">Tags that tend to show up on the same day as each other.</p>
+      <div id="ddCooccur"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>🌈 Mood volatility by phase</h2>
+      <p class="card-sub">How much your mood swings day-to-day — not just the average.</p>
+      <div id="ddVolatility"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>🎯 "Better/worse than yesterday" — how accurate?</h2>
+      <p class="card-sub">Comparing your gut feeling against what your scores actually did.</p>
+      <div id="ddTrajAccuracy"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>✨ Best day / 🌧️ Worst day</h2>
+      <p class="card-sub">Your two most extreme logged days, side by side.</p>
+      <div id="ddBestWorst"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>💬 Words in "what's driving today"</h2>
+      <p class="card-sub">Words that show up more often on your lower-mood days vs higher-mood days.</p>
+      <div id="ddWords"></div>
+    </div>
+
+    <div class="dd-section">
+      <h2>⏳ Counting backwards from your period</h2>
+      <p class="card-sub">Sometimes "days until period" explains symptoms better than "day of cycle" does — especially for symptoms that build in the run-up to your period.</p>
+      <div id="ddCountdown"></div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="view" id="view-insights">
+    <div class="insight-card">
+      <h2>ADHD &amp; your cycle</h2>
+      <p style="font-size:13px;color:var(--text);opacity:.7;margin-bottom:6px;line-height:1.6">Fluctuating oestrogen levels across the cycle can significantly affect how ADHD symptoms feel day to day — particularly focus, emotional regulation, and rejection sensitivity.</p>
+      <p style="font-size:12px;color:var(--text);opacity:.5;margin-bottom:14px;line-height:1.5;font-style:italic">The clinical names for each stage are used elsewhere in the app in small print — here's what they actually mean, in order: your period, then the days just after, then mid-cycle, then the run-up to your next period.</p>
+      <div class="phase-insights">
+        <div class="insight-row"><span class="i-phase" style="background:#e8857a">Period<br><small style="opacity:.85">Menstrual · Days 1–5</small></span><div class="i-text">Oestrogen and progesterone are at their lowest. Dopamine can drop, making brain fog, low motivation, and emotional sensitivity noticeably worse.</div></div>
+        <div class="insight-row"><span class="i-phase" style="background:#8faa8b">Just after<br><small style="opacity:.85">Follicular · Days 6–13</small></span><div class="i-text">Rising oestrogen boosts dopamine and serotonin. Many people with ADHD report feeling sharper and more motivated. A good window for demanding tasks.</div></div>
+        <div class="insight-row"><span class="i-phase" style="background:#d4a756">Mid-cycle<br><small style="opacity:.85">Ovulation · Days 14–16</small></span><div class="i-text">Oestrogen peaks and testosterone rises briefly. Energy, confidence, and verbal fluency often feel strongest. Heightened sensory sensitivity is possible too.</div></div>
+        <div class="insight-row"><span class="i-phase" style="background:#8baabe">Run-up to period<br><small style="opacity:.85">Luteal · Days 17–28</small></span><div class="i-text">The final stretch before your period is when ADHD symptoms tend to spike hardest — rejection sensitivity, impulsivity, emotional dysregulation, executive dysfunction.</div></div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <h2>What this might mean for you</h2>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="padding:12px;background:rgba(245,239,230,0.6);border-radius:10px;font-size:13px;line-height:1.6"><strong style="color:var(--plum);display:block;margin-bottom:4px">💊 Medication</strong>Some people find their ADHD medication feels less effective in the run-up to their period. Worth tracking and raising with your prescriber if you notice a pattern.</div>
+        <div style="padding:12px;background:rgba(245,239,230,0.6);border-radius:10px;font-size:13px;line-height:1.6"><strong style="color:var(--plum);display:block;margin-bottom:4px">📅 Planning</strong>Knowing your "power window" — the days just after your period through to mid-cycle — can help you schedule demanding work and difficult conversations intentionally.</div>
+        <div style="padding:12px;background:rgba(245,239,230,0.6);border-radius:10px;font-size:13px;line-height:1.6"><strong style="color:var(--plum);display:block;margin-bottom:4px">📊 Evidence</strong>After a few months of logging, you'll have real data to show a GP, psychiatrist, or occupational health. Your tracker becomes evidence.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit entry</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group mb12">
+      <label>Date</label>
+      <input type="date" id="editDate">
+    </div>
+    <label class="field-label" style="margin-bottom:8px">Mood</label>
+    <div class="mood-grid" id="editMoodGrid" style="margin-bottom:14px">
+      <button class="mood-btn" data-mood="Happy" onclick="selectMood(this,'edit')"><span class="emoji">😊</span><span class="label">Happy</span></button>
+      <button class="mood-btn" data-mood="Content" onclick="selectMood(this,'edit')"><span class="emoji">🌿</span><span class="label">Content</span></button>
+      <button class="mood-btn" data-mood="Calm" onclick="selectMood(this,'edit')"><span class="emoji">😌</span><span class="label">Calm</span></button>
+      <button class="mood-btn" data-mood="Confident" onclick="selectMood(this,'edit')"><span class="emoji">✨</span><span class="label">Confident</span></button>
+      <button class="mood-btn" data-mood="Focused" onclick="selectMood(this,'edit')"><span class="emoji">🎯</span><span class="label">Focused</span></button>
+      <button class="mood-btn" data-mood="Productive" onclick="selectMood(this,'edit')"><span class="emoji">⚡</span><span class="label">Productive</span></button>
+      <button class="mood-btn" data-mood="Hyper" onclick="selectMood(this,'edit')"><span class="emoji">🚀</span><span class="label">Hyper</span></button>
+      <button class="mood-btn" data-mood="Restless" onclick="selectMood(this,'edit')"><span class="emoji">🌀</span><span class="label">Restless</span></button>
+      <button class="mood-btn" data-mood="Anxious" onclick="selectMood(this,'edit')"><span class="emoji">😰</span><span class="label">Anxious</span></button>
+      <button class="mood-btn" data-mood="Irritable" onclick="selectMood(this,'edit')"><span class="emoji">😤</span><span class="label">Irritable</span></button>
+      <button class="mood-btn" data-mood="Sensitive" onclick="selectMood(this,'edit')"><span class="emoji">🫀</span><span class="label">Sensitive</span></button>
+      <button class="mood-btn" data-mood="Emotional" onclick="selectMood(this,'edit')"><span class="emoji">🥺</span><span class="label">Emotional</span></button>
+      <button class="mood-btn" data-mood="Overwhelmed" onclick="selectMood(this,'edit')"><span class="emoji">😵</span><span class="label">Overwhelmed</span></button>
+      <button class="mood-btn" data-mood="Low" onclick="selectMood(this,'edit')"><span class="emoji">😔</span><span class="label">Low</span></button>
+      <button class="mood-btn" data-mood="Subdued" onclick="selectMood(this,'edit')"><span class="emoji">🌫️</span><span class="label">Subdued</span></button>
+      <button class="mood-btn" data-mood="Tired" onclick="selectMood(this,'edit')"><span class="emoji">😴</span><span class="label">Tired</span></button>
+      <button class="mood-btn" data-mood="Brain fog" onclick="selectMood(this,'edit')"><span class="emoji">☁️</span><span class="label">Brain fog</span></button>
+    </div>
+    <div class="energy-row">
+      <label>Energy — <span id="editEnergyVal">5</span>/10</label>
+      <input type="range" id="editEnergySlider" min="1" max="10" value="5" oninput="document.getElementById('editEnergyVal').textContent=this.value">
+      <div class="slider-labels"><span>Drained</span><span>Moderate</span><span>High</span></div>
+    </div>
+    <div class="energy-row">
+      <label>Focus — <span id="editFocusVal">5</span>/10</label>
+      <input type="range" id="editFocusSlider" min="1" max="10" value="5" oninput="document.getElementById('editFocusVal').textContent=this.value">
+      <div class="slider-labels"><span>Scattered</span><span>Okay</span><span>Sharp</span></div>
+    </div>
+    <div class="energy-row">
+      <label>Stress — <span id="editStressVal">5</span>/10</label>
+      <input type="range" id="editStressSlider" min="1" max="10" value="5" oninput="document.getElementById('editStressVal').textContent=this.value">
+      <div class="slider-labels"><span>Calm</span><span>Moderate</span><span>High</span></div>
+    </div>
+    <label class="field-label" style="margin-bottom:8px">Day context</label>
+    <div class="ctx-selector" id="editCtxSelector">
+      <button class="ctx-btn" data-ctx="Work" onclick="selectCtx(this,'edit')"><span class="ctx-icon">💼</span>Work</button>
+      <button class="ctx-btn" data-ctx="Home" onclick="selectCtx(this,'edit')"><span class="ctx-icon">🏠</span>Home</button>
+      <button class="ctx-btn" data-ctx="Leave" onclick="selectCtx(this,'edit')"><span class="ctx-icon">🌴</span>Leave</button>
+      <button class="ctx-btn" data-ctx="Weekend" onclick="selectCtx(this,'edit')"><span class="ctx-icon">☀️</span>Weekend</button>
+    </div>
+    <label class="field-label" style="margin-bottom:8px">How did today compare to yesterday?</label>
+    <div class="traj-row" id="editTrajSelector">
+      <button class="traj-btn up" data-traj="Better" onclick="selectTraj(this,'edit')"><span class="traj-icon">📈</span>Better</button>
+      <button class="traj-btn" data-traj="Same" onclick="selectTraj(this,'edit')"><span class="traj-icon">➡️</span>Same</button>
+      <button class="traj-btn down" data-traj="Worse" onclick="selectTraj(this,'edit')"><span class="traj-icon">📉</span>Worse</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="field-label" style="margin-bottom:8px">Symptoms / feelings</label>
+      <div class="tag-grid" id="editTagGrid">
+        <span class="tag" onclick="toggleTag(this,'edit')">Cramps</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Bloating</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Headache</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Tender breasts</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Back pain</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Hyperfocus</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Rejection sensitive</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Time blindness</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Impulsive</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Poor sleep</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Heightened senses</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Low motivation</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Sensory overload</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Cravings</span>
+        <span class="tag" onclick="toggleTag(this,'edit')">Tearful</span>
+      </div>
+    </div>
+    <textarea class="notes-area" id="editNoteText" placeholder="Anything driving today's mood?"></textarea>
+    <button class="btn-primary" onclick="saveEdit()">Save changes</button>
+  </div>
+</div>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tab-today" onclick="switchTab('today')"><span class="tab-icon">🌙</span><span class="tab-label">Today</span></button>
+  <button class="tab-btn" id="tab-log" onclick="switchTab('log')"><span class="tab-icon">✏️</span><span class="tab-label">Log</span></button>
+  <button class="tab-btn" id="tab-forecast" onclick="switchTab('forecast')"><span class="tab-icon">🔮</span><span class="tab-label">Forecast</span></button>
+  <button class="tab-btn" id="tab-patterns" onclick="switchTab('patterns')"><span class="tab-icon">📊</span><span class="tab-label">Patterns</span></button>
+  <button class="tab-btn" id="tab-deepdive" onclick="switchTab('deepdive')"><span class="tab-icon">🔍</span><span class="tab-label">Deep Dive</span></button>
+  <button class="tab-btn" id="tab-history" onclick="switchTab('history')"><span class="tab-icon">📋</span><span class="tab-label">History</span></button>
+  <button class="tab-btn" id="tab-insights" onclick="switchTab('insights')"><span class="tab-icon">💡</span><span class="tab-label">Info</span></button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== STATE =====================
+let state = JSON.parse(localStorage.getItem('cycleMoodData') || '{"lastPeriod":"","cycleLength":28,"logs":[]}');
+let forecastWindow = 3;
+let editingId = null;
+let logSelectedMoods = [];
+let editSelectedMoods = [];
+let logContext = [];
+let logTraj = null;
+let editContext = [];
+let editTraj = null;
+
+// ===================== PHASE DATA =====================
+const PHASE_INFO = {
+  menstrual:{name:"Period <span style=\"font-size:13px;font-weight:400;opacity:.6\">(Menstrual phase)</span>",days:"Days 1–5",desc:"Your period. Hormone levels are at their lowest — lower energy, more inward, less motivated.",adhd:"Oestrogen at its lowest drops dopamine. Brain fog, low motivation, and emotional sensitivity are often heightened. Not a personal failing — it's hormonal.",weather:{icon:"🌧️",label:"Stormy",mood:3.5,energy:3,focus:3.5},likelyMoods:["Low","Tired","Emotional","Brain fog"],likelyTags:["Cramps","Low motivation","Poor sleep","Tearful"],tip:"Lower-demand days if you can. Rest counts as productive."},
+  follicular:{name:"Just after your period <span style=\"font-size:13px;font-weight:400;opacity:.6\">(Follicular phase)</span>",days:"Days 6–13",desc:"Rising oestrogen brings increasing energy, motivation, and mental clarity.",adhd:"Rising oestrogen boosts dopamine and serotonin. ADHD symptoms often feel more manageable. Good week to tackle demanding tasks.",weather:{icon:"🌤️",label:"Clearing",mood:7,energy:7,focus:7},likelyMoods:["Happy","Focused","Calm"],likelyTags:["Hyperfocus"],tip:"Good window for the harder tasks or conversations."},
+  ovulation:{name:"Mid-cycle <span style=\"font-size:13px;font-weight:400;opacity:.6\">(Ovulation)</span>",days:"Days 14–16",desc:"Peak oestrogen with a testosterone surge. Energy, confidence, and verbal fluency often feel strongest.",adhd:"Many people with ADHD feel sharpest now. Heightened sensory sensitivity is possible too. Make the most of this window.",weather:{icon:"☀️",label:"Sunny",mood:8,energy:8,focus:8},likelyMoods:["Confident","Happy","Focused"],likelyTags:["Heightened senses","Hyperfocus"],tip:"Your peak window — make the most of it."},
+  luteal:{name:"Run-up to your period <span style=\"font-size:13px;font-weight:400;opacity:.6\">(Luteal phase)</span>",days:"Days 17–28",desc:"Post-ovulation, progesterone rises. The week before your period can be most challenging.",adhd:"ADHD symptoms tend to spike — rejection sensitivity, emotional dysregulation, impulsivity, executive dysfunction. Medication may feel less effective.",weather:{icon:"⛅",label:"Overcast",mood:5,energy:5,focus:4.5},likelyMoods:["Irritable","Anxious","Overwhelmed"],likelyTags:["Rejection sensitive","Time blindness","Impulsive","Cravings"],tip:"Lighten your load where you can. Speak up early if you need support."}
+};
+const PHASE_COLORS={menstrual:'#e8857a',follicular:'#8faa8b',ovulation:'#d4a756',luteal:'#8baabe'};
+const PHASE_NAMES={menstrual:'Menstrual',follicular:'Follicular',ovulation:'Ovulation',luteal:'Luteal'};
+const PHASE_PLAIN={menstrual:'Period',follicular:'Just after',ovulation:'Mid-cycle',luteal:'Run-up to period'};
+const PHASE_PHRASE={menstrual:'your period',follicular:'the days just after your period',ovulation:'mid-cycle',luteal:'the run-up to your period'};
+function phaseLabelHtml(phase,small){
+  // small=true for tight spaces (pills/badges): plain label only, no clinical term
+  if(small)return PHASE_PLAIN[phase];
+  return `${PHASE_PLAIN[phase]} <span style="opacity:.65;font-weight:400">(${PHASE_NAMES[phase]})</span>`;
+}
+const MOOD_EMOJIS={'Happy':'😊','Content':'🌿','Calm':'😌','Confident':'✨','Focused':'🎯','Productive':'⚡','Hyper':'🚀','Restless':'🌀','Anxious':'😰','Irritable':'😤','Sensitive':'🫀','Emotional':'🥺','Overwhelmed':'😵','Low':'😔','Subdued':'🌫️','Tired':'😴','Brain fog':'☁️'};
+const MOOD_SCORE={Happy:8,Content:7.5,Calm:7,Confident:9,Focused:8,Productive:8.5,Hyper:5,Restless:4,Anxious:3,Irritable:2,Sensitive:4,Emotional:4,Overwhelmed:2,Low:2,Subdued:3.5,Tired:3,'Brain fog':3};
+
+// ===================== HELPERS =====================
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function addDays(dateStr,n){const d=new Date(dateStr);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
+function save(){localStorage.setItem('cycleMoodData',JSON.stringify(state));}
+
+function getPhase(day,cl){
+  if(day<=5)return'menstrual';
+  if(day<=Math.floor(cl*.46))return'follicular';
+  if(day<=Math.floor(cl*.57))return'ovulation';
+  return'luteal';
+}
+function isLateLuteal(day,cl){return getPhase(day,cl)==='luteal'&&day>=cl-5;}
+
+function getDayOfCycleForDate(dateStr){
+  if(!state.lastPeriod)return null;
+  const start=new Date(state.lastPeriod),target=new Date(dateStr);
+  start.setHours(0,0,0,0);target.setHours(0,0,0,0);
+  const diff=Math.floor((target-start)/(1000*60*60*24));
+  return((diff%state.cycleLength)+state.cycleLength)%state.cycleLength+1;
+}
+function getDayOfCycle(){return getDayOfCycleForDate(todayStr());}
+
+// ===================== STREAK =====================
+function calcStreak(){
+  const today=todayStr();
+  const logged=new Set(state.logs.map(l=>l.date));
+  let streak=0,check=today;
+  // if today not logged yet, check from yesterday
+  if(!logged.has(today))check=addDays(today,-1);
+  while(logged.has(check)){streak++;check=addDays(check,-1);}
+  return streak;
+}
+
+function renderStreak(){
+  const streak=calcStreak();
+  const todayLogged=state.logs.some(l=>l.date===todayStr());
+  document.getElementById('streakCount').textContent=streak===0?'No streak yet':`${streak} day streak`;
+  document.getElementById('streakLabel').textContent=todayLogged?'Logged today ✓':'Log today to keep your streak';
+  document.getElementById('streakFlame').textContent=streak>=7?'🔥':streak>=3?'✨':'💭';
+  // Show last 7 days as dots
+  const dots=document.getElementById('streakDots');
+  dots.innerHTML='';
+  const logged=new Set(state.logs.map(l=>l.date));
+  for(let i=6;i>=0;i--){
+    const d=addDays(todayStr(),-i);
+    const dot=document.createElement('div');
+    dot.className='streak-dot'+(logged.has(d)?' filled':'');
+    dots.appendChild(dot);
+  }
+}
+
+// ===================== CYCLE SETUP =====================
+function saveCycle(){
+  const lp=document.getElementById('lastPeriod').value;
+  const cl=parseInt(document.getElementById('cycleLength').value);
+  if(!lp){showToast('Please enter your last period date');return;}
+  state.lastPeriod=lp;state.cycleLength=cl||28;
+  save();updateTodayView();showToast('Cycle updated ✓');
+}
+
+function markPeriodToday(){
+  const today=todayStr();
+  state.lastPeriod=today;
+  document.getElementById('lastPeriod').value=today;
+  save();updateTodayView();
+  showToast('Period start logged — cycle reset to Day 1 🩸');
+}
+
+function updateTodayView(){
+  const day=getDayOfCycle();
+  renderStreak();
+  updateDataCount();
+  if(!day)return;
+  document.getElementById('dayCounter').innerHTML=`${day}<span>day of cycle</span>`;
+  const phase=getPhase(day,state.cycleLength);
+  const info=PHASE_INFO[phase];
+  document.getElementById('phaseName').innerHTML=info.name;
+  document.getElementById('phaseDesc').textContent=info.days+' · '+info.desc;
+  const adhdDiv=document.getElementById('adhdNote');
+  adhdDiv.style.display='block';
+  document.getElementById('adhdText').textContent=info.adhd;
+  drawWheel(day,state.cycleLength);
+}
+
+// ===================== WHEEL =====================
+function drawWheel(currentDay,cl){
+  const canvas=document.getElementById('cycleWheel');
+  const ctx=canvas.getContext('2d');
+  const cx=130,cy=130,r=110,innerR=55;
+  ctx.clearRect(0,0,260,260);
+  const phases=[{key:'menstrual',days:5,color:'#e8857a'},{key:'follicular',days:Math.floor(cl*.46)-5,color:'#8faa8b'},{key:'ovulation',days:Math.floor(cl*.57)-Math.floor(cl*.46),color:'#d4a756'},{key:'luteal',days:cl-Math.floor(cl*.57),color:'#8baabe'}];
+  const total=phases.reduce((a,p)=>a+p.days,0);
+  let sa=-Math.PI/2;
+  phases.forEach(p=>{const sw=(p.days/total)*2*Math.PI;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,sa,sa+sw);ctx.closePath();ctx.fillStyle=p.color;ctx.fill();sa+=sw;});
+  ctx.beginPath();ctx.arc(cx,cy,innerR,0,Math.PI*2);ctx.fillStyle='#f5efe6';ctx.fill();
+  if(currentDay){
+    const da=-Math.PI/2+(((currentDay-1)/cl)*2*Math.PI);
+    const mr=(r+innerR)/2;
+    const mx=cx+Math.cos(da)*mr,my=cy+Math.sin(da)*mr;
+    ctx.beginPath();ctx.arc(mx,my,9,0,Math.PI*2);ctx.fillStyle='#3d2535';ctx.fill();
+    ctx.fillStyle='white';ctx.font='bold 8px DM Sans';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(currentDay,mx,my);
+  }
+  ctx.fillStyle='#7a4a5e';ctx.font='300 11px Fraunces';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('cycle',cx,cy);
+}
+
+// ===================== MOOD / TAG SELECTION =====================
+function selectMood(btn,context){
+  const grid=context==='edit'?'editMoodGrid':'moodGrid';
+  const mood=btn.dataset.mood;
+  if(btn.classList.contains('selected')){
+    btn.classList.remove('selected');
+    if(context==='edit')editSelectedMoods=editSelectedMoods.filter(m=>m!==mood);
+    else logSelectedMoods=logSelectedMoods.filter(m=>m!==mood);
+  }else{
+    btn.classList.add('selected');
+    if(context==='edit')editSelectedMoods.push(mood);
+    else logSelectedMoods.push(mood);
+  }
+}
+function toggleTag(el,context){el.classList.toggle('selected');}
+
+function selectCtx(btn,context){
+  const val=btn.dataset.ctx;
+  if(context==='edit'){
+    if(editContext.includes(val)){editContext=editContext.filter(c=>c!==val);btn.classList.remove('selected');}
+    else{editContext.push(val);btn.classList.add('selected');}
+  }else{
+    if(logContext.includes(val)){logContext=logContext.filter(c=>c!==val);btn.classList.remove('selected');}
+    else{logContext.push(val);btn.classList.add('selected');}
+  }
+}
+
+function selectTraj(btn,context){
+  const grid=context==='edit'?'editTrajSelector':'trajSelector';
+  document.querySelectorAll('#'+grid+' .traj-btn').forEach(b=>b.classList.remove('selected'));
+  const already=context==='edit'?(editTraj===btn.dataset.traj):(logTraj===btn.dataset.traj);
+  if(already){if(context==='edit')editTraj=null;else logTraj=null;}
+  else{btn.classList.add('selected');if(context==='edit')editTraj=btn.dataset.traj;else logTraj=btn.dataset.traj;}
+}
+
+// ===================== SAVE LOG =====================
+function saveLog(){
+  const dateVal=document.getElementById('logDate').value;
+  if(!dateVal){showToast('Please select a date');return;}
+  const tags=Array.from(document.querySelectorAll('#tagGrid .tag.selected')).map(t=>t.textContent);
+  let cycleDay=null,phase=null;
+  if(state.lastPeriod){cycleDay=getDayOfCycleForDate(dateVal);if(cycleDay>0)phase=getPhase(cycleDay,state.cycleLength);}
+  const entry={id:Date.now(),date:dateVal,moods:[...logSelectedMoods],energy:parseInt(document.getElementById('energySlider').value),focus:parseInt(document.getElementById('focusSlider').value),stress:parseInt(document.getElementById('stressSlider').value),context:logContext,trajectory:logTraj,tags,note:document.getElementById('noteText').value.trim(),cycleDay,phase};
+  state.logs.unshift(entry);save();
+  // reset
+  logSelectedMoods=[];
+  document.querySelectorAll('#moodGrid .mood-btn.selected').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#tagGrid .tag.selected').forEach(t=>t.classList.remove('selected'));
+  document.getElementById('energySlider').value=5;document.getElementById('focusSlider').value=5;document.getElementById('stressSlider').value=5;
+  logContext=[];logTraj=null;
+  document.querySelectorAll('#ctxSelector .ctx-btn, #trajSelector .traj-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('energyVal').textContent='5';document.getElementById('focusVal').textContent='5';document.getElementById('stressVal').textContent='5';
+  document.getElementById('noteText').value='';
+  renderStreak();showToast('Entry saved ✓');
+}
+
+// ===================== EDIT =====================
+function openEdit(id){
+  const entry=state.logs.find(l=>l.id===id);
+  if(!entry)return;
+  editingId=id;
+  editSelectedMoods=[...(entry.moods||[])];
+  document.getElementById('editDate').value=entry.date;
+  document.getElementById('editEnergySlider').value=entry.energy||5;
+  document.getElementById('editFocusSlider').value=entry.focus||5;
+  document.getElementById('editStressSlider').value=entry.stress||5;
+  document.getElementById('editEnergyVal').textContent=entry.energy||5;
+  document.getElementById('editFocusVal').textContent=entry.focus||5;
+  document.getElementById('editStressVal').textContent=entry.stress||5;
+  document.getElementById('editNoteText').value=entry.note||'';
+  // moods
+  document.querySelectorAll('#editMoodGrid .mood-btn').forEach(b=>{
+    b.classList.toggle('selected',editSelectedMoods.includes(b.dataset.mood));
+  });
+  // tags
+  document.querySelectorAll('#editTagGrid .tag').forEach(t=>{
+    t.classList.toggle('selected',(entry.tags||[]).includes(t.textContent));
+  });
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('editModal').classList.remove('open');
+  editingId=null;editSelectedMoods=[];editContext=[];editTraj=null;
+}
+
+function saveEdit(){
+  if(!editingId)return;
+  const idx=state.logs.findIndex(l=>l.id===editingId);
+  if(idx===-1)return;
+  const dateVal=document.getElementById('editDate').value;
+  const tags=Array.from(document.querySelectorAll('#editTagGrid .tag.selected')).map(t=>t.textContent);
+  let cycleDay=null,phase=null;
+  if(state.lastPeriod&&dateVal){cycleDay=getDayOfCycleForDate(dateVal);if(cycleDay>0)phase=getPhase(cycleDay,state.cycleLength);}
+  state.logs[idx]={...state.logs[idx],date:dateVal,moods:[...editSelectedMoods],energy:parseInt(document.getElementById('editEnergySlider').value),focus:parseInt(document.getElementById('editFocusSlider').value),stress:parseInt(document.getElementById('editStressSlider').value),context:editContext,trajectory:editTraj,tags,note:document.getElementById('editNoteText').value.trim(),cycleDay,phase};
+  save();closeModal();renderHistory();showToast('Entry updated ✓');
+}
+
+// ===================== HISTORY =====================
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  if(!state.logs.length){list.innerHTML='<div class="empty-state">No entries yet.<br>Start logging to see patterns.</div>';return;}
+  list.innerHTML=state.logs.map(entry=>{
+    const dateStr=new Date(entry.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const moodEmojis=(entry.moods||[]).map(m=>MOOD_EMOJIS[m]||'').join('');
+    const CTX_ICONS={'Work':'💼','Home':'🏠','Leave':'🌴','Weekend':'☀️'};
+    const TRAJ_ICONS={'Better':'📈','Same':'➡️','Worse':'📉'};
+    const ctxList=Array.isArray(entry.context)?entry.context:(entry.context?[entry.context]:[]);
+    const ctxBadge=ctxList.map(c=>`<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(122,74,94,0.1);color:var(--plum)">${CTX_ICONS[c]||''} ${c}</span>`).join('');
+    const trajBadge=entry.trajectory?`<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(201,122,109,0.1);color:var(--rose)">${TRAJ_ICONS[entry.trajectory]||''} ${entry.trajectory}</span>`:'';
+    const phaseTag=entry.phase?`<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:${PHASE_COLORS[entry.phase]};color:white">${PHASE_PLAIN[entry.phase]}${entry.cycleDay?' D'+entry.cycleDay:''}</span>`:'';
+    const tagHtml=(entry.tags||[]).map(t=>`<span class="entry-tag">${t}</span>`).join('');
+    return`<div class="history-entry">
+      <div class="entry-header">
+        <span class="entry-date">${dateStr}</span>${phaseTag}
+        <div class="entry-actions">
+          <button class="edit-btn" onclick="openEdit(${entry.id})">Edit</button>
+          <button class="delete-btn" onclick="deleteLog(${entry.id})">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:20px">${moodEmojis||'—'}</span>
+        <span style="font-size:11px;color:var(--text);opacity:.6">⚡${entry.energy||'?'}/10 · 🎯${entry.focus||'?'}/10 · 😤${entry.stress||'?'}/10</span>
+      </div>
+      ${tagHtml?`<div class="entry-tags">${tagHtml}</div>`:''}
+      ${entry.note?`<div class="entry-note">${entry.note}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function deleteLog(id){state.logs=state.logs.filter(l=>l.id!==id);save();renderHistory();}
+
+// ===================== PATTERN SUMMARY =====================
+function getPersonalPattern(cycleDay){
+  if(!state.lastPeriod||state.logs.length<3)return null;
+  const w=2;
+  const relevant=state.logs.filter(l=>{
+    if(!l.cycleDay)return false;
+    const diff=Math.abs(l.cycleDay-cycleDay);
+    return diff<=w||diff>=state.cycleLength-w;
+  });
+  if(relevant.length<2)return null;
+  const avgEnergy=relevant.reduce((s,l)=>s+(l.energy||5),0)/relevant.length;
+  const avgFocus=relevant.reduce((s,l)=>s+(l.focus||5),0)/relevant.length;
+  const stressLogs=relevant.filter(l=>l.stress!=null);
+  const avgStress=stressLogs.length?stressLogs.reduce((s,l)=>s+l.stress,0)/stressLogs.length:null;
+  let moodScores=[];
+  relevant.forEach(l=>{if(l.moods&&l.moods.length){moodScores.push(l.moods.reduce((s,m)=>s+(MOOD_SCORE[m]||5),0)/l.moods.length);}});
+  const avgMood=moodScores.length?moodScores.reduce((a,b)=>a+b,0)/moodScores.length:null;
+  const tagFreq={};
+  relevant.forEach(l=>(l.tags||[]).forEach(t=>{tagFreq[t]=(tagFreq[t]||0)+1;}));
+  const topTags=Object.entries(tagFreq).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>e[0]);
+  const moodFreq={};
+  relevant.forEach(l=>(l.moods||[]).forEach(m=>{moodFreq[m]=(moodFreq[m]||0)+1;}));
+  const topMoods=Object.entries(moodFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+  return{avgEnergy,avgFocus,avgStress,avgMood,topTags,topMoods,sampleSize:relevant.length};
+}
+
+function getPhasePattern(phaseName){
+  // gather all logs for this phase
+  const logs=state.logs.filter(l=>l.phase===phaseName&&l.cycleDay);
+  if(logs.length<2)return null;
+  const avgEnergy=logs.reduce((s,l)=>s+(l.energy||5),0)/logs.length;
+  const avgFocus=logs.reduce((s,l)=>s+(l.focus||5),0)/logs.length;
+  const stressLogs=logs.filter(l=>l.stress!=null);
+  const avgStress=stressLogs.length?stressLogs.reduce((s,l)=>s+l.stress,0)/stressLogs.length:null;
+  let moodScores=[];
+  logs.forEach(l=>{if(l.moods&&l.moods.length){moodScores.push(l.moods.reduce((s,m)=>s+(MOOD_SCORE[m]||5),0)/l.moods.length);}});
+  const avgMood=moodScores.length?moodScores.reduce((a,b)=>a+b,0)/moodScores.length:null;
+  const tagFreq={};
+  logs.forEach(l=>(l.tags||[]).forEach(t=>{tagFreq[t]=(tagFreq[t]||0)+1;}));
+  const topTags=Object.entries(tagFreq).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>e[0]);
+  const moodFreq={};
+  logs.forEach(l=>(l.moods||[]).forEach(m=>{moodFreq[m]=(moodFreq[m]||0)+1;}));
+  const topMoods=Object.entries(moodFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+  return{avgEnergy,avgFocus,avgStress,avgMood,topTags,topMoods,sampleSize:logs.length};
+}
+
+function generateInsight(phase,pattern){
+  const info=PHASE_INFO[phase];
+  const baseline=info.weather;
+  const phasePlain=PHASE_PHRASE[phase];
+  const energyDiff=pattern.avgEnergy-baseline.energy;
+  const focusDiff=pattern.avgFocus-baseline.focus;
+  const moodDiff=pattern.avgMood!==null?(pattern.avgMood-baseline.mood):0;
+  const stressHigh=pattern.avgStress!==null&&pattern.avgStress>=6.5;
+
+  const parts=[];
+
+  // Mood — the headline comparison, phrased differently depending on direction and phase
+  if(pattern.avgMood!==null){
+    if(moodDiff<=-1.5){
+      const severity=moodDiff<=-3?'substantially':'noticeably';
+      if(phase==='follicular'||phase==='ovulation'){
+        parts.push(`This is usually a "power window" — but your mood is ${severity} below where the research would predict for ${phasePlain}, which suggests that boost isn't landing the way it does for most people. That's a genuinely useful pattern to flag with a GP or psychiatrist.`);
+      }else if(phase==='luteal'){
+        parts.push(`Your mood drop in ${phasePlain} is ${severity} steeper than the typical pattern — this is often where ADHD and hormonal dips compound each other.`);
+      }else{
+        parts.push(`Your mood during your period is ${severity} lower than even the typical low point — worth tracking alongside how your period itself feels physically.`);
+      }
+    }else if(moodDiff>=1.5){
+      parts.push(`Your mood holds up better than the typical pattern for ${phasePlain} — this phase seems to treat you kindly.`);
+    }
+  }
+
+  // Energy vs Focus — sometimes these diverge, which is itself informative
+  const energyLow=energyDiff<=-1.5, focusLow=focusDiff<=-1.5;
+  const energyHigh=energyDiff>=1.5, focusHigh=focusDiff>=1.5;
+  if(energyLow&&focusLow){
+    parts.push(`Both energy and focus are running below what's typical here.`);
+  }else if(energyLow&&!focusLow){
+    parts.push(`Interestingly, your energy dips more than your focus does — you may feel tired but can still concentrate when needed.`);
+  }else if(focusLow&&!energyLow){
+    parts.push(`Your focus tends to suffer more than your energy here — a classic ADHD-hormonal pattern where motivation and follow-through are harder even when you don't feel physically drained.`);
+  }else if(energyHigh&&focusHigh){
+    parts.push(`Energy and focus both run higher than typical — a genuine strength window for you.`);
+  }
+
+  if(stressHigh){
+    parts.push(`Stress is also running high during this phase, which is worth factoring in when mood dips — it may not be the cycle alone.`);
+  }
+
+  if(!parts.length){
+    parts.push(`${phasePlain.charAt(0).toUpperCase()+phasePlain.slice(1)} broadly matches the typical pattern for you — no strong personal deviation showing up yet.`);
+  }
+
+  return parts.join(' ');
+}
+
+function renderPatternSummary(){
+  const content=document.getElementById('patternContent');
+  const totalLogs=state.logs.length;
+  if(totalLogs<5){
+    content.innerHTML=`<div class="pattern-no-data">
+      <div style="font-size:36px;margin-bottom:10px">📊</div>
+      <strong style="display:block;margin-bottom:6px;color:var(--plum);opacity:.8">Not enough data yet</strong>
+      You have ${totalLogs} ${totalLogs===1?'entry':'entries'}. Log across at least one full cycle to start seeing your personal patterns — usually around 10–15 entries.
+    </div>`;
+    return;
+  }
+
+  const phases=['menstrual','follicular','ovulation','luteal'];
+  const phaseLogs={};
+  phases.forEach(p=>phaseLogs[p]=state.logs.filter(l=>l.phase===p).length);
+  const totalPhaseLogs=Object.values(phaseLogs).reduce((a,b)=>a+b,0);
+
+  let html=`<div class="data-counter"><span class="dc-icon">📅</span><div class="dc-text">Based on <strong>${totalLogs} entries</strong> across your cycle. The more you log, the more accurate this gets.</div></div>`;
+
+  phases.forEach(phase=>{
+    const pattern=getPhasePattern(phase);
+    const color=PHASE_COLORS[phase];
+    const name=PHASE_PLAIN[phase];
+    const info=PHASE_INFO[phase];
+
+    if(!pattern){
+      html+=`<div class="pattern-phase-block">
+        <div class="ppb-header"><span class="ppb-pill" style="background:${color}">${name}</span><span class="ppb-days">${PHASE_NAMES[phase]} · ${info.days}</span></div>
+        <div style="font-size:12px;color:var(--text);opacity:.45;font-style:italic">Not enough entries for this phase yet.</div>
+      </div>`;
+      return;
+    }
+
+    const ep=Math.round((pattern.avgEnergy/10)*100);
+    const fp=Math.round((pattern.avgFocus/10)*100);
+    const mp=pattern.avgMood!==null?Math.round((pattern.avgMood/10)*100):50;
+    const sp=pattern.avgStress!==null?Math.round((pattern.avgStress/10)*100):null;
+    const ec=ep>=65?'#8faa8b':ep>=40?'#d4a756':'#e8857a';
+    const fc=fp>=65?'#8baabe':fp>=40?'#d4a756':'#e8857a';
+    const mc=mp>=65?'#8faa8b':mp>=40?'#d4a756':'#e8857a';
+    // stress: inverted — high stress = red
+    const sc=sp!==null?(sp<=35?'#8faa8b':sp<=60?'#d4a756':'#e8857a'):null;
+    const moodTagHtml=pattern.topMoods.map(m=>`<span class="ppb-mood-tag">${MOOD_EMOJIS[m]||''} ${m}</span>`).join('');
+    const insight=generateInsight(phase,pattern);
+
+    html+=`<div class="pattern-phase-block">
+      <div class="ppb-header">
+        <span class="ppb-pill" style="background:${color}">${name}</span>
+        <span class="ppb-days">${PHASE_NAMES[phase]} · ${info.days} · ${pattern.sampleSize} entr${pattern.sampleSize===1?'y':'ies'}</span>
+      </div>
+      <div class="ppb-bars">
+        <div class="ppb-bar-row"><span class="ppb-bar-label">Mood</span><div class="ppb-bar-track"><div class="ppb-bar-fill" style="width:${mp}%;background:${mc}"></div></div><span class="ppb-bar-val">${pattern.avgMood!==null?pattern.avgMood.toFixed(1):'—'}</span></div>
+        <div class="ppb-bar-row"><span class="ppb-bar-label">Energy</span><div class="ppb-bar-track"><div class="ppb-bar-fill" style="width:${ep}%;background:${ec}"></div></div><span class="ppb-bar-val">${pattern.avgEnergy.toFixed(1)}</span></div>
+        <div class="ppb-bar-row"><span class="ppb-bar-label">Focus</span><div class="ppb-bar-track"><div class="ppb-bar-fill" style="width:${fp}%;background:${fc}"></div></div><span class="ppb-bar-val">${pattern.avgFocus.toFixed(1)}</span></div>
+        ${sp!==null?`<div class="ppb-bar-row"><span class="ppb-bar-label">Stress</span><div class="ppb-bar-track"><div class="ppb-bar-fill" style="width:${sp}%;background:${sc}"></div></div><span class="ppb-bar-val">${pattern.avgStress.toFixed(1)}</span></div>`:''}
+      </div>
+      ${moodTagHtml?`<div class="ppb-moods">${moodTagHtml}</div>`:''}
+      ${pattern.topTags.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${pattern.topTags.map(t=>`<span class="entry-tag">${t}</span>`).join('')}</div>`:''}
+      <div class="ppb-insight">${insight}</div>
+    </div>`;
+  });
+
+  content.innerHTML=html;
+}
+
+// ===================== DEEP DIVE =====================
+const STOPWORDS=new Set(['the','a','an','and','or','but','is','was','were','be','been','being','to','of','in','on','at','for','with','as','by','that','this','it','i','my','me','we','our','had','has','have','did','do','does','so','very','really','just','about','because','due','from','than','too','also','felt','feel','feeling','today','day','bit','little','lot','quite','still','not','no','was','am','im',"i'm",'got','get','went','being']);
+
+function moodColorFor(score){return score>=6.5?'#8faa8b':score>=4?'#d4a756':'#e8857a';}
+
+function renderDeepDive(){
+  renderDDContext();
+  renderDDDayOfWeek();
+  renderDDCrossCut();
+  renderDDCooccur();
+  renderDDVolatility();
+  renderDDTrajAccuracy();
+  renderDDBestWorst();
+  renderDDWords();
+  renderDDCountdown();
+}
+
+function scoreFor(entry){
+  if(entry.moods&&entry.moods.length)return entry.moods.reduce((s,m)=>s+(MOOD_SCORE[m]||5),0)/entry.moods.length;
+  return null;
+}
+
+// ---- 1. Context comparison ----
+function renderDDContext(){
+  const el=document.getElementById('ddContext');
+  const contexts=['Work','Home','Leave','Weekend'];
+  const rows=contexts.map(ctx=>{
+    const logs=state.logs.filter(l=>{const c=Array.isArray(l.context)?l.context:(l.context?[l.context]:[]);return c.includes(ctx);});
+    if(logs.length<2)return null;
+    const scores=logs.map(scoreFor).filter(s=>s!==null);
+    if(!scores.length)return null;
+    const avgMood=scores.reduce((a,b)=>a+b,0)/scores.length;
+    const avgEnergy=logs.reduce((s,l)=>s+(l.energy||5),0)/logs.length;
+    const avgFocus=logs.reduce((s,l)=>s+(l.focus||5),0)/logs.length;
+    const stressLogs=logs.filter(l=>l.stress!=null);
+    const avgStress=stressLogs.length?stressLogs.reduce((s,l)=>s+l.stress,0)/stressLogs.length:null;
+    return{ctx,n:logs.length,avgMood,avgEnergy,avgFocus,avgStress};
+  }).filter(r=>r);
+
+  if(rows.length<2){el.innerHTML='<div class="dd-no-data">Log a few more entries across different contexts (work, home, leave, weekend) to compare them.</div>';return;}
+
+  el.innerHTML=rows.map(r=>{
+    const icon={Work:'💼',Home:'🏠',Leave:'🌴',Weekend:'☀️'}[r.ctx];
+    return`<div class="dd-row">
+      <span class="dd-row-label">${icon} ${r.ctx}</span>
+      <span class="dd-row-n">${r.n} day${r.n!==1?'s':''}</span>
+      <div class="dd-bars-mini">
+        <div class="dd-bar-mini-row"><span class="dd-bar-mini-label">Mood</span><div class="dd-bar-mini-track"><div class="dd-bar-mini-fill" style="width:${r.avgMood*10}%;background:${moodColorFor(r.avgMood)}"></div></div><span class="dd-bar-mini-val">${r.avgMood.toFixed(1)}</span></div>
+        <div class="dd-bar-mini-row"><span class="dd-bar-mini-label">Stress</span><div class="dd-bar-mini-track"><div class="dd-bar-mini-fill" style="width:${(r.avgStress||5)*10}%;background:${r.avgStress!==null?(r.avgStress<=4?'#8faa8b':r.avgStress<=6.5?'#d4a756':'#e8857a'):'#ccc'}"></div></div><span class="dd-bar-mini-val">${r.avgStress!==null?r.avgStress.toFixed(1):'—'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- 2. Day of week ----
+function renderDDDayOfWeek(){
+  const el=document.getElementById('ddDayOfWeek');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const buckets=days.map(()=>[]);
+  state.logs.forEach(l=>{
+    const d=new Date(l.date).getDay();
+    const s=scoreFor(l);
+    if(s!==null)buckets[d].push(s);
+  });
+  const rows=buckets.map((scores,i)=>scores.length?{day:days[i],n:scores.length,avg:scores.reduce((a,b)=>a+b,0)/scores.length}:null);
+  const validCount=rows.filter(r=>r).length;
+  if(validCount<4){el.innerHTML='<div class="dd-no-data">Log across more days of the week to see if any particular day stands out.</div>';return;}
+
+  el.innerHTML=rows.map((r,i)=>{
+    if(!r)return`<div class="dd-row"><span class="dd-row-label">${days[i]}</span><span class="dd-row-n" style="opacity:.3">no data</span></div>`;
+    return`<div class="dd-row">
+      <span class="dd-row-label">${r.day}</span>
+      <span class="dd-row-n">${r.n}</span>
+      <div class="dd-bars-mini">
+        <div class="dd-bar-mini-row"><span class="dd-bar-mini-label">Mood</span><div class="dd-bar-mini-track"><div class="dd-bar-mini-fill" style="width:${r.avg*10}%;background:${moodColorFor(r.avg)}"></div></div><span class="dd-bar-mini-val">${r.avg.toFixed(1)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- 3. Phase × Context cross-cut ----
+function renderDDCrossCut(){
+  const el=document.getElementById('ddCrossCut');
+  const phases=['menstrual','follicular','ovulation','luteal'];
+  const contexts=['Work','Home','Leave','Weekend'];
+  const rows=[];
+  phases.forEach(phase=>{
+    contexts.forEach(ctx=>{
+      const logs=state.logs.filter(l=>{
+        const c=Array.isArray(l.context)?l.context:(l.context?[l.context]:[]);
+        return l.phase===phase&&c.includes(ctx);
+      });
+      if(logs.length<2)return;
+      const scores=logs.map(scoreFor).filter(s=>s!==null);
+      if(!scores.length)return;
+      const avgMood=scores.reduce((a,b)=>a+b,0)/scores.length;
+      rows.push({phase,ctx,n:logs.length,avgMood});
+    });
+  });
+  rows.sort((a,b)=>a.avgMood-b.avgMood);
+  if(rows.length<2){el.innerHTML='<div class="dd-no-data">Once you have entries combining specific phases and situations (e.g. work days in the run-up to your period), they will show up here — usually after a couple of full cycles of logging.</div>';return;}
+
+  const icon={Work:'💼',Home:'🏠',Leave:'🌴',Weekend:'☀️'};
+  el.innerHTML='<div class="dd-cross-grid">'+rows.map(r=>{
+    return`<div class="dd-cross-row">
+      <span class="dd-cross-phase" style="background:${PHASE_COLORS[r.phase]}">${PHASE_PLAIN[r.phase]}</span>
+      <span class="dd-cross-ctx">${icon[r.ctx]} ${r.ctx} · ${r.n} day${r.n!==1?'s':''}</span>
+      <span class="dd-cross-mood" style="color:${moodColorFor(r.avgMood)}">${r.avgMood.toFixed(1)}</span>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+// ---- 4. Symptom co-occurrence ----
+function renderDDCooccur(){
+  const el=document.getElementById('ddCooccur');
+  const pairCounts={};
+  const tagCounts={};
+  state.logs.forEach(l=>{
+    const tags=l.tags||[];
+    tags.forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;});
+    for(let i=0;i<tags.length;i++){
+      for(let j=i+1;j<tags.length;j++){
+        const key=[tags[i],tags[j]].sort().join('|||');
+        pairCounts[key]=(pairCounts[key]||0)+1;
+      }
+    }
+  });
+  const pairs=Object.entries(pairCounts).filter(([k,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if(!pairs.length){el.innerHTML='<div class="dd-no-data">Log symptom tags a bit more — once a couple of tags repeatedly show up together, they will appear here.</div>';return;}
+
+  el.innerHTML=pairs.map(([key,count])=>{
+    const [a,b]=key.split('|||');
+    const minCount=Math.min(tagCounts[a],tagCounts[b]);
+    const pct=Math.round((count/minCount)*100);
+    return`<div class="dd-cooccur-pair">
+      <span class="dd-cooccur-tags"><strong>${a}</strong> + <strong>${b}</strong></span>
+      <span class="dd-cooccur-pct">${pct}% together</span>
+    </div>`;
+  }).join('');
+}
+
+// ---- 5. Volatility ----
+function renderDDVolatility(){
+  const el=document.getElementById('ddVolatility');
+  const phases=['menstrual','follicular','ovulation','luteal'];
+  const blocks=phases.map(phase=>{
+    const logs=state.logs.filter(l=>l.phase===phase).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const scores=logs.map(scoreFor).filter(s=>s!==null);
+    if(scores.length<3)return null;
+    const mean=scores.reduce((a,b)=>a+b,0)/scores.length;
+    const variance=scores.reduce((s,v)=>s+Math.pow(v-mean,2),0)/scores.length;
+    const sd=Math.sqrt(variance);
+    return{phase,n:scores.length,sd,mean};
+  }).filter(b=>b);
+
+  if(!blocks.length){el.innerHTML='<div class="dd-no-data">Need at least 3 entries within a single phase to measure how much your mood swings — keep logging.</div>';return;}
+
+  el.innerHTML=blocks.map(b=>{
+    const pct=Math.min(100,Math.round((b.sd/4)*100));
+    const color=b.sd<1?'#8faa8b':b.sd<2?'#d4a756':'#e8857a';
+    const desc=b.sd<1?'Pretty stable — your mood tends to sit in a consistent range during this phase.':b.sd<2?'Some swing — your mood moves around a fair amount during this phase.':'High swing — your mood varies a lot day to day in this phase, more than a steady average would suggest.';
+    return`<div class="dd-volatility-card">
+      <div class="dd-vol-header"><span class="dd-vol-phase" style="background:${PHASE_COLORS[b.phase]}">${PHASE_PLAIN[b.phase]}</span><span class="dd-vol-score">±${b.sd.toFixed(1)}</span></div>
+      <div class="dd-vol-bar-track"><div class="dd-vol-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="dd-vol-desc">${desc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---- 6. Trajectory accuracy ----
+function renderDDTrajAccuracy(){
+  const el=document.getElementById('ddTrajAccuracy');
+  const logs=[...state.logs].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let correct=0,total=0,matchups=[];
+  for(let i=1;i<logs.length;i++){
+    const prev=logs[i-1],cur=logs[i];
+    if(!cur.trajectory)continue;
+    const prevScore=scoreFor(prev),curScore=scoreFor(cur);
+    if(prevScore===null||curScore===null)continue;
+    // only compare if dates are consecutive-ish (within 2 days)
+    const dayDiff=(new Date(cur.date)-new Date(prev.date))/(1000*60*60*24);
+    if(dayDiff>2)continue;
+    const diff=curScore-prevScore;
+    let actual='Same';
+    if(diff>0.75)actual='Better';else if(diff<-0.75)actual='Worse';
+    total++;
+    if(actual===cur.trajectory)correct++;
+    matchups.push({said:cur.trajectory,actual});
+  }
+  if(total<4){el.innerHTML='<div class="dd-no-data">Use the Better/Same/Worse tap on a few more consecutive days to see how well it tracks your actual scores.</div>';return;}
+  const pct=Math.round((correct/total)*100);
+  el.innerHTML=`<div class="dd-accuracy-stat">
+    <div class="dd-accuracy-pct">${pct}%</div>
+    <div class="dd-accuracy-label">of the time, your "better/same/worse" tap matched what your actual mood score did</div>
+    <div class="dd-accuracy-breakdown">
+      <div class="dd-accuracy-item"><div class="n">${correct}</div><div class="l">Matched</div></div>
+      <div class="dd-accuracy-item"><div class="n">${total-correct}</div><div class="l">Differed</div></div>
+      <div class="dd-accuracy-item"><div class="n">${total}</div><div class="l">Total</div></div>
+    </div>
+  </div>`;
+}
+
+// ---- 7. Best/worst day ----
+function renderDDBestWorst(){
+  const el=document.getElementById('ddBestWorst');
+  const scored=state.logs.map(l=>({entry:l,score:scoreFor(l)})).filter(s=>s.score!==null);
+  if(scored.length<4){el.innerHTML='<div class="dd-no-data">Log a few more entries with moods selected to surface your standout best and worst days.</div>';return;}
+  scored.sort((a,b)=>b.score-a.score);
+  const best=scored[0].entry,worst=scored[scored.length-1].entry;
+
+  const renderCard=(entry,type)=>{
+    const dateStr=new Date(entry.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    const phaseLabel=entry.phase?PHASE_PLAIN[entry.phase]:'—';
+    const ctx=Array.isArray(entry.context)?entry.context.join(', '):(entry.context||'—');
+    const moods=(entry.moods||[]).join(', ')||'—';
+    const tags=(entry.tags||[]).join(', ')||'—';
+    return`<div class="dd-bw-card ${type}">
+      <div class="dd-bw-icon">${type==='best'?'✨':'🌧️'}</div>
+      <div class="dd-bw-date">${dateStr}</div>
+      <div class="dd-bw-detail">
+        <strong>Phase:</strong> ${phaseLabel}<br>
+        <strong>Context:</strong> ${ctx}<br>
+        <strong>Mood:</strong> ${moods}<br>
+        <strong>Energy/Focus/Stress:</strong> ${entry.energy||'—'}/${entry.focus||'—'}/${entry.stress||'—'}<br>
+        <strong>Tags:</strong> ${tags}
+      </div>
+      ${entry.note?`<div class="dd-bw-note">"${entry.note}"</div>`:''}
+    </div>`;
+  };
+
+  el.innerHTML=`<div class="dd-bw-grid">${renderCard(best,'best')}${renderCard(worst,'worst')}</div>`;
+}
+
+// ---- 8. Notes word analysis ----
+function renderDDWords(){
+  const el=document.getElementById('ddWords');
+  const withNotes=state.logs.map(l=>({entry:l,score:scoreFor(l),note:(l.note||'').toLowerCase()})).filter(x=>x.note&&x.score!==null);
+  if(withNotes.length<6){el.innerHTML='<div class="dd-no-data">Write a few more notes in "anything driving today\'s mood?" to start surfacing word patterns — needs roughly 6+ notes.</div>';return;}
+
+  const lowNotes=withNotes.filter(x=>x.score<4.5);
+  const highNotes=withNotes.filter(x=>x.score>=6.5);
+
+  function wordFreq(items){
+    const freq={};
+    items.forEach(x=>{
+      const words=x.note.replace(/[.,!?;:'"()]/g,'').split(/\s+/);
+      const seen=new Set();
+      words.forEach(w=>{
+        if(w.length<3||STOPWORDS.has(w)||seen.has(w))return;
+        seen.add(w);
+        freq[w]=(freq[w]||0)+1;
+      });
+    });
+    return Object.entries(freq).filter(([w,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  }
+
+  const lowWords=wordFreq(lowNotes);
+  const highWords=wordFreq(highNotes);
+
+  if(!lowWords.length&&!highWords.length){el.innerHTML='<div class="dd-no-data">No repeated words yet across your lower and higher mood days — keep noting what is going on and patterns may emerge.</div>';return;}
+
+  let html='';
+  if(lowWords.length){
+    html+=`<div class="dd-word-group-label">Shows up on lower-mood days</div>`;
+    html+=lowWords.map(([w,c])=>`<span class="dd-word-chip low">${w} <span class="dd-word-count">×${c}</span></span>`).join('');
+  }
+  if(highWords.length){
+    html+=`<div class="dd-word-group-label">Shows up on higher-mood days</div>`;
+    html+=highWords.map(([w,c])=>`<span class="dd-word-chip high">${w} <span class="dd-word-count">×${c}</span></span>`).join('');
+  }
+  el.innerHTML=html;
+}
+
+// ---- 9. Countdown to period reframe ----
+function renderDDCountdown(){
+  const el=document.getElementById('ddCountdown');
+  if(!state.lastPeriod||state.logs.length<6){el.innerHTML='<div class="dd-no-data">Keep logging — this view needs cycle data plus a reasonable spread of entries to be meaningful.</div>';return;}
+
+  // bucket by days-until-next-period: 0 = period day, 1-5 = days before
+  const buckets={};
+  state.logs.forEach(l=>{
+    if(!l.cycleDay)return;
+    const daysUntilPeriod=(state.cycleLength-l.cycleDay+1)%state.cycleLength;
+    if(daysUntilPeriod>=0&&daysUntilPeriod<=6){
+      const score=scoreFor(l);
+      if(score===null)return;
+      if(!buckets[daysUntilPeriod])buckets[daysUntilPeriod]=[];
+      buckets[daysUntilPeriod].push(score);
+    }
+  });
+
+  const labels={0:'Period day',1:'1 day before',2:'2 days before',3:'3 days before',4:'4 days before',5:'5 days before',6:'6 days before'};
+  const order=[6,5,4,3,2,1,0];
+  const rows=order.map(d=>buckets[d]&&buckets[d].length?{d,n:buckets[d].length,avg:buckets[d].reduce((a,b)=>a+b,0)/buckets[d].length}:null).filter(r=>r);
+
+  if(rows.length<3){el.innerHTML='<div class="dd-no-data">Not enough entries in the days immediately before your period yet to map this out.</div>';return;}
+
+  el.innerHTML=rows.map(r=>`<div class="dd-countdown-row">
+    <span class="dd-countdown-label">${labels[r.d]}</span>
+    <span class="dd-row-n">${r.n}</span>
+    <div class="dd-bars-mini">
+      <div class="dd-bar-mini-row"><span class="dd-bar-mini-label">Mood</span><div class="dd-bar-mini-track"><div class="dd-bar-mini-fill" style="width:${r.avg*10}%;background:${moodColorFor(r.avg)}"></div></div><span class="dd-bar-mini-val">${r.avg.toFixed(1)}</span></div>
+    </div>
+  </div>`).join('')+'<div style="font-size:11px;color:var(--text);opacity:.55;margin-top:10px;font-style:italic">If your mood drops sharply in the final 2-3 days regardless of exact cycle length, that\'s a PMDD-style pattern worth mentioning to a GP.</div>';
+}
+function buildForecastDay(dateStr,isToday){
+  const cycleDay=getDayOfCycleForDate(dateStr);
+  if(!cycleDay)return null;
+  const phase=getPhase(cycleDay,state.cycleLength);
+  const info=PHASE_INFO[phase];
+  const ll=isLateLuteal(cycleDay,state.cycleLength);
+  let base={...info.weather},likelyMoods=[...info.likelyMoods],likelyTags=[...info.likelyTags],tip=info.tip,source='research',confidence='medium';
+  if(ll){base={icon:"🌩️",label:"Turbulent",mood:2.5,energy:3,focus:2.5};likelyMoods=["Irritable","Overwhelmed","Anxious","Emotional"];likelyTags=["Rejection sensitive","Tearful","Impulsive","Time blindness","Sensory overload"];tip="Toughest window. Be gentle with yourself.";}
+  const personal=getPersonalPattern(cycleDay);
+  if(personal){
+    source='personal';confidence=personal.sampleSize>=3?'high':'medium';
+    base.energy=Math.round(personal.avgEnergy*.6+base.energy*.4*10)/10;
+    base.focus=Math.round(personal.avgFocus*.6+base.focus*.4*10)/10;
+    if(personal.avgMood!==null)base.mood=Math.round(personal.avgMood*.6+base.mood*.4*10)/10;
+    if(personal.topTags.length)likelyTags=personal.topTags;
+    const wm=(m)=>m>=7.5?{icon:'☀️',label:'Sunny'}:m>=6?{icon:'🌤️',label:'Bright spells'}:m>=4.5?{icon:'⛅',label:'Overcast'}:m>=3?{icon:'🌧️',label:'Rainy'}:{icon:'🌩️',label:'Stormy'};
+    const w=wm(base.mood);base.icon=w.icon;base.label=w.label;
+  }
+  return{dateStr,isToday,cycleDay,phase,ll,base,likelyMoods,likelyTags,tip,source,confidence};
+}
+
+function renderForecast(){
+  if(!state.lastPeriod){
+    document.getElementById('forecastList').innerHTML='<div class="empty-state">Add your cycle details on the Today tab to see your forecast.</div>';
+    document.getElementById('sharePreview').textContent='Set up your cycle to generate a summary.';
+    return;
+  }
+  const today=todayStr();
+  const days=[];
+  for(let i=0;i<forecastWindow;i++){const d=buildForecastDay(addDays(today,i),i===0);if(d)days.push(d);}
+  document.getElementById('forecastList').innerHTML=days.map(d=>{
+    const date=new Date(d.dateStr);
+    const dow=date.toLocaleDateString('en-GB',{weekday:'short'});
+    const dom=date.getDate();
+    const pc=PHASE_COLORS[d.phase];
+    const pn=d.ll?'Final stretch':PHASE_PLAIN[d.phase];
+    const ep=Math.round((d.base.energy/10)*100),fp=Math.round((d.base.focus/10)*100),mp=Math.round((d.base.mood/10)*100);
+    const ec=ep>=65?'#8faa8b':ep>=40?'#d4a756':'#e8857a';
+    const foc=fp>=65?'#8baabe':fp>=40?'#d4a756':'#e8857a';
+    const mc=mp>=65?'#8faa8b':mp>=40?'#d4a756':'#e8857a';
+    const tagHtml=d.likelyTags.map(t=>`<span class="fd-tag">${t}</span>`).join('');
+    const cc=d.confidence==='high'?'#8faa8b':'#d4a756';
+    const cl=d.source==='personal'?(d.confidence==='high'?'● Your pattern (strong)':'● Your pattern (building)'):'● Research baseline';
+    const sb=d.source==='personal'?`<span class="data-source-badge badge-personal">personal</span>`:`<span class="data-source-badge badge-research">research</span>`;
+    return`<div class="forecast-day${d.isToday?' is-today':''}">
+      <div class="fd-date-col"><div class="fd-dow">${dow}</div><div class="fd-date">${dom}</div>${d.isToday?'<div class="fd-today-badge">Today</div>':''}</div>
+      <div class="fd-content">
+        <div><span class="fd-phase-pill" style="background:${pc}">${pn} · D${d.cycleDay}</span>${sb}</div>
+        <div class="fd-weather"><span class="fd-weather-icon">${d.base.icon}</span><span class="fd-weather-label">${d.base.label}</span></div>
+        <div class="fd-bars">
+          <div class="fd-bar-row"><span class="fd-bar-label">Mood</span><div class="fd-bar-track"><div class="fd-bar-fill" style="width:${mp}%;background:${mc}"></div></div><span class="fd-bar-val">${d.base.mood.toFixed(1)}</span></div>
+          <div class="fd-bar-row"><span class="fd-bar-label">Energy</span><div class="fd-bar-track"><div class="fd-bar-fill" style="width:${ep}%;background:${ec}"></div></div><span class="fd-bar-val">${d.base.energy.toFixed(1)}</span></div>
+          <div class="fd-bar-row"><span class="fd-bar-label">Focus</span><div class="fd-bar-track"><div class="fd-bar-fill" style="width:${fp}%;background:${foc}"></div></div><span class="fd-bar-val">${d.base.focus.toFixed(1)}</span></div>
+        </div>
+        ${tagHtml?`<div class="fd-tags">${tagHtml}</div>`:''}
+        <div class="fd-note">${d.tip}</div>
+        <div class="confidence-strip"><div class="conf-dot" style="background:${cc}"></div><span class="conf-label">${cl}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  renderShareText(days);
+}
+
+function renderShareText(days){
+  if(!days||!days.length)return;
+
+  // Translate internal tags/moods into plain, concrete language a partner can act on
+  const PLAIN_SYMPTOM={
+    'Rejection sensitive':'takes things more personally than usual',
+    'Tearful':'may cry more easily',
+    'Impulsive':'may act or speak without thinking it through as much',
+    'Time blindness':'may lose track of time or run late',
+    'Sensory overload':'may get overwhelmed by noise, mess, or too much going on at once',
+    'Poor sleep':'is probably running on less sleep',
+    'Low motivation':'may find it harder to get going on things',
+    'Cramps':'may be in physical pain',
+    'Heightened senses':'may be more sensitive to noise or light',
+    'Hyperfocus':'may get absorbed in something and lose track of everything else',
+    'Cravings':'may want comfort food more than usual'
+  };
+  const PLAIN_MOOD={
+    'Irritable':'shorter temper / less patience',
+    'Anxious':'more anxious or on edge',
+    'Overwhelmed':'overwhelmed more easily',
+    'Emotional':'feelings closer to the surface',
+    'Low':'low mood / low motivation',
+    'Subdued':'quieter / flatter than usual',
+    'Tired':'more tired than usual',
+    'Brain fog':'forgetful, harder to concentrate',
+    'Restless':'restless, hard to settle',
+    'Hyper':'wired / full of energy',
+    'Sensitive':'more emotionally reactive'
+  };
+
+  function plainSummary(d){
+    const bits=[];
+    (d.likelyMoods||[]).forEach(m=>{if(PLAIN_MOOD[m]&&!bits.includes(PLAIN_MOOD[m]))bits.push(PLAIN_MOOD[m]);});
+    (d.likelyTags||[]).forEach(t=>{if(PLAIN_SYMPTOM[t]&&bits.length<3&&!bits.includes(PLAIN_SYMPTOM[t]))bits.push(PLAIN_SYMPTOM[t]);});
+    return bits.slice(0,3).join(', ');
+  }
+
+  function dayLabel(d){
+    const date=new Date(d.dateStr);
+    return d.isToday?'Today':date.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+  }
+
+  // Group consecutive days that share the same rough severity band, so we don't repeat near-identical lines
+  const band=(mood)=>mood<4?'hard':mood<6?'mixed':'good';
+  const groups=[];
+  days.forEach(d=>{
+    const b=band(d.base.mood);
+    const last=groups[groups.length-1];
+    if(last&&last.band===b){last.days.push(d);}
+    else{groups.push({band:b,days:[d]});}
+  });
+
+  const lines=[`Hey — quick heads up on how I might be feeling over the next ${days.length} day${days.length>1?'s':''}, based on my cycle tracking:\n`];
+
+  groups.forEach(g=>{
+    const first=g.days[0],last=g.days[g.days.length-1];
+    const rangeLabel=g.days.length===1?dayLabel(first):`${dayLabel(first)} to ${dayLabel(last)}`;
+    const summary=plainSummary(first);
+    const icon=g.band==='hard'?'⚠️':g.band==='good'?'✅':'➖';
+    let line=`${icon} ${rangeLabel}: `;
+    if(g.band==='hard'){
+      line+=`probably a harder stretch for me${summary?` — ${summary}`:''}.`;
+    }else if(g.band==='good'){
+      line+=`should be a good stretch — more like my usual self.`;
+    }else{
+      line+=`fairly average for me${summary?` — possibly ${summary}`:''}.`;
+    }
+    lines.push(line);
+  });
+
+  lines.push(`\nNone of this is an excuse, just so we can plan around the harder days together. 💙`);
+  document.getElementById('sharePreview').textContent=lines.join('\n');
+}
+
+function copyShare(){
+  const text=document.getElementById('sharePreview').textContent;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('Copied ✓'));}
+  else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Copied ✓');}
+}
+
+function setWindow(n){
+  forecastWindow=n;
+  document.querySelectorAll('.wt-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('wt-'+n).classList.add('active');
+  renderForecast();
+}
+
+// ===================== TABS =====================
+function switchTab(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='history')renderHistory();
+  if(name==='forecast')renderForecast();
+  if(name==='patterns')renderPatternSummary();
+  if(name==='deepdive')renderDeepDive();
+}
+
+// ===================== TOAST =====================
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ===================== EXPORT / IMPORT =====================
+function exportData(){
+  const payload={
+    exportedAt:new Date().toISOString(),
+    appVersion:'cycle-mood-tracker',
+    state:state
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateTag=todayStr();
+  a.href=url;
+  a.download=`cycle-mood-backup-${dateTag}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported ✓');
+}
+
+function importData(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const parsed=JSON.parse(e.target.result);
+      const incoming=parsed.state||parsed; // support raw state too
+      if(!incoming||!Array.isArray(incoming.logs)){
+        showToast('That file doesn\\u2019t look right');
+        return;
+      }
+      const existingIds=new Set(state.logs.map(l=>l.id));
+      const existingDates=new Set(state.logs.map(l=>l.date));
+      let added=0,skipped=0;
+      incoming.logs.forEach(l=>{
+        if(existingIds.has(l.id)||existingDates.has(l.date)){skipped++;return;}
+        state.logs.push(l);
+        existingIds.add(l.id);existingDates.add(l.date);
+        added++;
+      });
+      // only adopt cycle settings if none are currently set
+      if(!state.lastPeriod&&incoming.lastPeriod){
+        state.lastPeriod=incoming.lastPeriod;
+        state.cycleLength=incoming.cycleLength||28;
+        document.getElementById('lastPeriod').value=state.lastPeriod;
+        document.getElementById('cycleLength').value=state.cycleLength;
+      }
+      state.logs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      save();
+      updateTodayView();
+      showToast(`Imported ${added} entr${added===1?'y':'ies'}${skipped?`, skipped ${skipped} duplicate${skipped===1?'':'s'}`:''} ✓`);
+    }catch(err){
+      showToast('Could not read that file');
+    }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+function updateDataCount(){
+  const el=document.getElementById('dataCount');
+  if(!el)return;
+  const n=state.logs.length;
+  el.textContent=n?`${n} entr${n===1?'y':'ies'} stored on this device`:'No entries yet';
+}
+
+// ===================== INIT =====================
+document.getElementById('logDate').value=todayStr();
+if(state.lastPeriod){
+  document.getElementById('lastPeriod').value=state.lastPeriod;
+  document.getElementById('cycleLength').value=state.cycleLength;
+  updateTodayView();
+}else{drawWheel(null,28);renderStreak();updateDataCount();}
+</script>
+</body>
+</html>
