@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Barrier Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   EDIT YOUR COLOURS HERE
+   Change any hex code below, save, and refresh the page.
+   ========================================================== */
+:root {
+  --open:      #1f8a4c;   /* barriers up */
+  --closed:    #c62828;   /* barriers down */
+  --unknown:   #c77f00;   /* no forecast / may be open */
+  --accent:    #1f5f8b;   /* planner and buttons */
+  --bg:        #eef1f0;   /* page background */
+  --surface:   #ffffff;   /* cards */
+  --text:      #1b2a34;   /* main text */
+  --muted:     #5b6b75;   /* secondary text */
+  --line:      #d3dad8;   /* borders */
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --open:    #3fb36f;
+    --closed:  #ef5350;
+    --unknown: #e5a027;
+    --accent:  #6bb3e0;
+    --bg:      #0f1a21;
+    --surface: #172630;
+    --text:    #e6edef;
+    --muted:   #92a3ad;
+    --line:    #29404d;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 1rem/1.5 "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+main { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
+h1, h2, .big { font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif; margin: 0; }
+h1 { font-size: 1.15rem; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
+h2 { font-size: 1.2rem; font-weight: 700; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+
+/* Status panel: the barrier lights flash alternately when closed */
+.status { color: #fff; border: 0; padding: 20px 18px; position: relative; overflow: hidden; background: var(--unknown); }
+.status[data-state="open"]   { background: var(--open); }
+.status[data-state="closed"] { background: var(--closed); }
+.status .lights { position: absolute; right: 18px; top: 18px; display: flex; gap: 8px; }
+.status .lights i { width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.28); }
+.status[data-state="closed"] .lights i { background: #fff; animation: flash 1.1s steps(1) infinite; }
+.status[data-state="closed"] .lights i:nth-child(2) { animation-delay: .55s; }
+@keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .status .lights i { animation: none !important; } }
+.status .where { font-size: .95rem; opacity: .92; font-weight: 500; }
+.status .big { font-size: 5rem; line-height: .95; font-weight: 700; margin: 4px 0 6px; }
+.status .sub { font-size: 1.1rem; font-weight: 500; }
+.status .conf { font-size: .85rem; opacity: .9; margin-top: 8px; }
+
+/* Timeline strip */
+.strip { position: relative; height: 34px; border-radius: 8px; overflow: hidden; background: var(--open); margin-top: 12px; }
+.strip .seg { position: absolute; top: 0; bottom: 0; background: var(--closed); }
+.strip .seg.unk { background: var(--unknown); }
+.strip .mark { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--text); border-radius: 2px; }
+.strip .mark.me { background: #fff; box-shadow: 0 0 0 2px var(--accent); }
+.axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .85rem; margin-top: 4px; }
+.legend { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+
+/* Planner */
+label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+.row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-top: 10px; }
+input[type="time"], input[type="number"], input[type="search"] {
+  width: 100%; font: inherit; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--text);
+}
+input:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.advice { margin-top: 14px; display: grid; gap: 10px; }
+.tip { border-left: 6px solid var(--accent); background: var(--bg); padding: 10px 12px; border-radius: 8px; }
+.tip.good { border-color: var(--open); }
+.tip.bad  { border-color: var(--closed); }
+.tip.warn { border-color: var(--unknown); }
+.tip b { font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif; font-size: 1.45rem; font-weight: 700; display: block; line-height: 1.15; }
+.tip span { color: var(--muted); font-size: .92rem; }
+
+/* Trains */
+ul.trains { list-style: none; margin: 8px 0 0; padding: 0; }
+ul.trains li { display: grid; grid-template-columns: 3.4rem 1fr auto; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); align-items: baseline; }
+ul.trains li:first-child { border-top: 0; }
+.t-time { font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif; font-weight: 700; font-size: 1.3rem; }
+.t-dest { font-size: .95rem; }
+.t-dest small { color: var(--muted); display: block; }
+.t-delay { font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.late { color: var(--closed); font-weight: 600; }
+
+button {
+  font: inherit; font-weight: 600; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+}
+button.ghost { background: transparent; color: var(--accent); }
+details summary { cursor: pointer; font-weight: 600; }
+.results { display: grid; gap: 8px; margin-top: 10px; }
+.msg { color: var(--muted); font-size: .92rem; margin: 6px 0 0; }
+.err { color: var(--closed); }
+footer { color: var(--muted); font-size: .85rem; }
+footer a { color: var(--accent); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Barrier Watch</h1>
+
+  <section class="card status" id="status" data-state="unknown" aria-live="polite">
+    <div class="lights" aria-hidden="true"><i></i><i></i></div>
+    <div class="where" id="where">Loading…</div>
+    <div class="big" id="state">…</div>
+    <div class="sub" id="sub">Fetching the latest forecast</div>
+    <div class="conf" id="conf"></div>
+  </section>
+
+  <section class="card" id="timelineCard">
+    <h2>Next 30 minutes</h2>
+    <div class="strip" id="strip" role="img" aria-label="Forecast of open and closed periods"></div>
+    <div class="axis"><span id="axisStart"></span><span id="axisEnd"></span></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="card" id="plannerCard">
+    <h2>When should I leave?</h2>
+    <div class="row">
+      <div><label for="leave">I want to go at</label><input id="leave" type="time"></div>
+      <div><label for="margin">Margin (min)</label><input id="margin" type="number" min="0" max="10" inputmode="numeric"></div>
+    </div>
+    <div class="advice" id="advice"></div>
+    <p class="msg">Closures are only forecast about 30 minutes ahead. Leave this page open and the advice appears once your time is inside that window.</p>
+  </section>
+
+  <section class="card" id="trainsCard">
+    <h2>Trains due</h2>
+    <ul class="trains" id="trains"></ul>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Change crossing</summary>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <input id="q" type="search" placeholder="Search by name, e.g. Mucking">
+        <button id="go" type="button">Search</button>
+      </div>
+      <div class="results" id="results"></div>
+      <p class="msg"><button class="ghost" id="reset" type="button">Back to Stanford-le-Hope</button></p>
+    </details>
+  </section>
+
+  <footer>
+    <p id="updated"></p>
+    <p><strong>Always follow the signals and barriers at the crossing.</strong> Times are estimates (marked ~) and can be wrong. This app must never be used to decide whether a crossing is safe to use.</p>
+    <p>Data from <a id="credit" href="https://mindthegates.uk/crossing/stanford-le-hope" target="_blank" rel="noopener">Mind the Gates</a>.</p>
+  </footer>
+</main>
+
+<script>
+/* ==========================================================
+   EDIT YOUR OPTIONS HERE
+   ========================================================== */
+const CONFIG = {
+  defaultCrossing: "stanford-le-hope",
+  defaultName: "Stanford-le-Hope, London Road",
+  refreshSeconds: 20,      // how often to refresh (the data updates every 20 seconds)
+  marginMinutes: 2,        // safety buffer (minutes) either side of a closure
+  trainsToShow: 4,         // set to 0 to hide the trains list
+  showTimeline: true,      // false hides the 30 minute strip
+  showPlanner: true        // false hides the "When should I leave?" box
+};
+/* ========================================================== */
+
+const API = "https://mindthegates.uk/api/v1";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+
+let slug = store.get("bw_slug", CONFIG.defaultCrossing);
+let name = store.get("bw_name", CONFIG.defaultName);
+let data = null;     // latest normalised response
+let timer = null;
+
+const fmt = ms => new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const mins = ms => Math.max(0, Math.round(ms / 60000));
+const ts = v => (v ? Date.parse(v) : null);
+
+function normalise(j) {
+  const d = j.crossing || j.data || j;
+  const st = d.status || {};
+  const state = ["open", "closed"].includes((st.state || "").toLowerCase()) ? st.state.toLowerCase() : "unknown";
+  const windows = (d.timeline || []).map(w => ({
+    state: ["open", "closed"].includes((w.state || "").toLowerCase()) ? w.state.toLowerCase() : "unknown",
+    start: ts(w.start), end: ts(w.end), conditional: !!w.conditional
+  }));
+  const ends = windows.map(w => w.end).filter(Boolean);
+  const covEnd = ends.length ? Math.max(...ends) : null;
+  windows.forEach(w => { if (!w.end) w.end = covEnd; });
+  const trains = (d.trains || []).map(t => ({
+    at: ts(t.at), headcode: t.headcode, origin: t.origin, destination: t.destination,
+    live: !!t.live, delay: Math.round((t.delay_sec || 0) / 60)
+  })).filter(t => t.at).sort((a, b) => a.at - b.at);
+  return {
+    name: d.name || null,
+    state, until: ts(st.until), confirmed: !!st.confirmed, source: st.confirmed_source || "",
+    windows, covEnd, trains
+  };
+}
+
+async function load() {
+  try {
+    const r = await fetch(`${API}/crossing/${encodeURIComponent(slug)}`, { headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    data = normalise(await r.json());
+    $("updated").textContent = `Last updated ${new Date().toLocaleTimeString("en-GB")}`;
+    render();
+  } catch (e) {
+    $("updated").innerHTML = `<span class="err">Couldn’t reach Mind the Gates (${e.message}). Retrying…</span>`;
+    if (!data) {
+      $("where").textContent = name;
+      $("state").textContent = "?";
+      $("sub").textContent = "No data yet. Check your connection or search for another crossing.";
+    }
+  }
+}
+
+function render() {
+  const now = Date.now();
+  const closedNext = data.windows.find(w => w.state === "closed" && w.end > now);
+
+  // Status panel
+  $("title").textContent = "Barrier Watch";
+  $("where").textContent = data.name || name;
+  $("status").dataset.state = data.state;
+  $("state").textContent = data.state === "open" ? "OPEN" : data.state === "closed" ? "CLOSED" : "UNSURE";
+  let sub = "No forecast available right now";
+  if (data.state === "closed") {
+    const until = data.until || (closedNext && closedNext.end);
+    sub = until ? `Barriers expected up ~${fmt(until)} (about ${mins(until - now)} min)` : "Barriers are down";
+  } else if (data.state === "open") {
+    sub = closedNext && closedNext.start > now
+      ? `Next closure ~${fmt(closedNext.start)} (in about ${mins(closedNext.start - now)} min)`
+      : "No closure forecast in the next 30 minutes";
+  }
+  $("sub").textContent = sub;
+  $("conf").textContent = data.confirmed
+    ? `Confirmed by ${data.source || "live"} data`
+    : "Forecast from the timetable and live train running";
+
+  renderTimeline(now);
+  renderTrains(now);
+  renderPlanner(now);
+}
+
+function renderTimeline(now) {
+  $("timelineCard").classList.toggle("hidden", !CONFIG.showTimeline);
+  if (!CONFIG.showTimeline) return;
+  const end = Math.max(data.covEnd || 0, now + 30 * 60000);
+  const span = end - now;
+  const pct = ms => Math.min(100, Math.max(0, ((ms - now) / span) * 100));
+  const strip = $("strip");
+  strip.innerHTML = "";
+  data.windows.filter(w => w.state !== "open" && w.end > now).forEach(w => {
+    const l = pct(Math.max(w.start, now)), r = pct(w.end);
+    const d = document.createElement("div");
+    d.className = "seg" + (w.state === "unknown" ? " unk" : "");
+    d.style.left = l + "%"; d.style.width = Math.max(1, r - l) + "%";
+    strip.appendChild(d);
+  });
+  const nowMark = document.createElement("div");
+  nowMark.className = "mark"; nowMark.style.left = "0%"; strip.appendChild(nowMark);
+  const p = currentPlan(now);
+  if (p && p.arrive && p.arrive <= end) {
+    const m = document.createElement("div");
+    m.className = "mark me"; m.style.left = `calc(${pct(p.arrive)}% - 1px)`; strip.appendChild(m);
+  }
+  $("axisStart").textContent = "Now " + fmt(now);
+  $("axisEnd").textContent = "~" + fmt(end);
+  const closed = data.windows.filter(w => w.state === "closed" && w.end > now);
+  $("legend").textContent = (closed.length
+    ? "Closed: " + closed.map(w => `~${fmt(Math.max(w.start, now))}–${fmt(w.end)}`).join(", ")
+    : "No closures forecast") + (p && p.arrive && p.arrive <= end ? ". White marker = your chosen time." : ".");
+}
+
+function renderTrains(now) {
+  $("trainsCard").classList.toggle("hidden", CONFIG.trainsToShow <= 0);
+  const ul = $("trains");
+  ul.innerHTML = "";
+  const list = data.trains.filter(t => t.at >= now - 60000).slice(0, CONFIG.trainsToShow);
+  if (!list.length) { ul.innerHTML = '<li><span></span><span class="t-dest">No trains in the forecast window</span><span></span></li>'; return; }
+  list.forEach(t => {
+    const li = document.createElement("li");
+    const late = t.delay >= 2;
+    li.innerHTML = `<span class="t-time">~${fmt(t.at)}</span>
+      <span class="t-dest">${esc(t.destination || "Train")}<small>${esc(t.origin ? "from " + t.origin : "")}${t.headcode ? " · " + esc(t.headcode) : ""}</small></span>
+      <span class="t-delay ${late ? "late" : ""}">${t.delay >= 1 ? "+" + t.delay + " min" : "on time"}</span>`;
+    ul.appendChild(li);
+  });
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- Planner ---------- */
+function leaveMs(now) {
+  const v = $("leave").value;
+  if (!v) return null;
+  const [h, m] = v.split(":").map(Number);
+  const d = new Date(now); d.setHours(h, m, 0, 0);
+  return d.getTime();
+}
+function currentPlan(now) {
+  if (!CONFIG.showPlanner || !data) return null;
+  const leave = leaveMs(now);
+  if (leave === null) return null;
+  const walk = 0;
+  const margin = (Number($("margin").value) || 0) * 60000;
+  return plan(leave, walk, margin, now);
+}
+function plan(leave, walk, margin, now) {
+  const arrive = leave + walk;
+  if (leave < now - 60000) return { kind: "past", arrive };
+  const covEnd = data.covEnd || now + 30 * 60000;
+  if (arrive > covEnd) return { kind: "far", arrive, covEnd };
+  const closed = data.windows.filter(w => w.state !== "open").sort((a, b) => a.start - b.start);
+  const blocks = (t, w) => t >= w.start - margin && t <= w.end + margin;
+  const hit = closed.find(w => blocks(arrive, w));
+  if (!hit) {
+    const nxt = closed.find(w => w.start - margin > arrive);
+    return { kind: "clear", arrive, leave, nxt };
+  }
+  // Option A: wait until the barriers are back up
+  let t = arrive;
+  for (const w of closed) if (blocks(t, w)) t = w.end + margin;
+  const after = { arrive: t, leave: t - walk, beyond: t > covEnd };
+  // Option B: leave earlier and cross before they come down
+  let b = hit.start - margin;
+  for (const w of [...closed].reverse()) if (w !== hit && blocks(b, w) && w.start < hit.start) b = w.start - margin;
+  const before = { arrive: b, leave: b - walk, ok: b - walk >= now - 30000 };
+  return { kind: "blocked", arrive, hit, after, before };
+}
+function renderPlanner(now) {
+  $("plannerCard").classList.toggle("hidden", !CONFIG.showPlanner);
+  const box = $("advice");
+  box.innerHTML = "";
+  const tip = (cls, big, small) => { const d = document.createElement("div"); d.className = "tip " + cls; d.innerHTML = `<b>${big}</b><span>${small}</span>`; box.appendChild(d); };
+  if (!CONFIG.showPlanner) return;
+  const p = currentPlan(now);
+  if (!p) { tip("", "Pick a time", "Enter when you want to go."); return; }
+    if (p.kind === "past") { tip("warn", "That time has passed", "Enter a later time to get advice."); return; }
+  if (p.kind === "far") {
+    tip("warn", "Too far ahead to forecast", `The forecast runs to ~${fmt(p.covEnd)}. Leave this page open and advice will appear when you’re inside that window (about ${mins(p.arrive - p.covEnd)} min from now).`);
+    return;
+  }
+  if (p.kind === "clear") {
+    tip("good", `Good to go at ${fmt(p.leave)}`, `` + (p.nxt ? `Next closure starts ~${fmt(p.nxt.start)}, about ${mins(p.nxt.start - p.arrive)} min after that.` : "No further closure is forecast in this window."));
+    return;
+  }
+  const w = p.hit;
+  tip("bad", "Barriers likely down at that time", `Closure forecast ~${fmt(w.start)}–${fmt(w.end)}${w.conditional ? " (may not happen)" : ""}.`);
+  if (p.before.ok) tip("warn", `Leave by ${fmt(p.before.leave)}`, `That gets you across before the barriers come down at ~${fmt(w.start)}.`);
+  else tip("warn", "Too late to beat this one", "You can’t get there before the barriers come down.");
+  tip("good", p.after.beyond ? "Wait for the next gap" : `Or go at ${fmt(p.after.leave)}`, p.after.beyond
+    ? "The next gap is beyond the current forecast window. Check back soon."
+    : `Barriers are expected to be back up by then, about ${mins(p.after.leave - p.arrive)} min after your planned time.`);
+}
+
+/* ---------- Inputs ---------- */
+function bindInputs() {
+  $("leave").value = store.get("bw_leave", "");
+  $("margin").value = store.get("bw_margin", CONFIG.marginMinutes);
+  ["leave", "margin"].forEach(id => $(id).addEventListener("input", () => {
+    store.set("bw_" + id, $(id).value);
+    if (data) render();
+  }));
+}
+
+/* ---------- Search ---------- */
+async function search() {
+  const q = $("q").value.trim();
+  const out = $("results");
+  if (!q) return;
+  out.innerHTML = '<p class="msg">Searching…</p>';
+  try {
+    const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    const arr = Array.isArray(j) ? j : (j.results || j.crossings || []);
+    if (!arr.length) { out.innerHTML = '<p class="msg">No crossings found.</p>'; return; }
+    out.innerHTML = "";
+    arr.slice(0, 8).forEach(c => {
+      const b = document.createElement("button");
+      b.className = "ghost"; b.type = "button";
+      b.textContent = c.name || c.slug;
+      b.onclick = () => choose(c.slug, c.name || c.slug);
+      out.appendChild(b);
+    });
+  } catch (e) {
+    out.innerHTML = `<p class="msg err">Search failed (${esc(e.message)}).</p>`;
+  }
+}
+function choose(s, n) {
+  slug = s; name = n; data = null;
+  store.set("bw_slug", s); store.set("bw_name", n);
+  $("credit").href = `https://mindthegates.uk/crossing/${encodeURIComponent(s)}`;
+  $("where").textContent = n; $("state").textContent = "…"; $("sub").textContent = "Loading…";
+  $("results").innerHTML = "";
+  load();
+}
+
+$("go").addEventListener("click", search);
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") search(); });
+$("reset").addEventListener("click", () => choose(CONFIG.defaultCrossing, CONFIG.defaultName));
+
+bindInputs();
+$("credit").href = `https://mindthegates.uk/crossing/${encodeURIComponent(slug)}`;
+$("where").textContent = name;
+load();
+timer = setInterval(load, Math.max(10, CONFIG.refreshSeconds) * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>
